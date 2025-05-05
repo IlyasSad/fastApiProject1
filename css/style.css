@@ -1,0 +1,63 @@
+body {
+    font-family: sans-serif;
+    line-height: 1.6;
+    background-color: #f4f4f4;
+    color: #333;
+    padding-bottom: 50px; /* Отступ снизу, если футер будет */
+}
+
+.container {
+     /* Bootstrap уже управляет шириной и центрированием */
+     /* Можно добавить свои max-width если нужно */
+}
+
+header h1 {
+    /* Используем классы Bootstrap */
+}
+
+#wallet-status span {
+    margin-right: 10px;
+}
+
+/* Bootstrap уже стилизует кнопки, инпуты, табы и модалки */
+
+.form-section {
+     /* Bootstrap border и padding уже есть от .tab-content */
+     /* Можно добавить тень или фон, если нужно */
+     /* box-shadow: 0 2px 5px rgba(0,0,0,0.05); */
+     background-color: #fff; /* Убираем фон от .tab-content */
+     padding: 20px; /* Убираем padding от .tab-content */
+     border: 1px solid #dee2e6 !important; /* Убираем border от .tab-content */
+     border-radius: 0.375rem; /* Закругление углов как у Bootstrap */
+}
+
+
+/* Стиль для списка токенов в модалке */
+#token-list li {
+    cursor: pointer;
+}
+
+#token-list li:hover {
+    background-color: #e9ecef; /* Цвет фона при наведении из Bootstrap */
+}
+
+#token-list li img {
+    width: 20px;
+    height: 20px;
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+/* Стиль для отображения баланса под полем ввода */
+.input-group + .form-text {
+    display: block; /* Убедиться, что small на новой строке */
+    margin-top: 0.25rem; /* Отступ сверху как у Bootstrap */
+}
+
+/* Скрываем элементы через Bootstrap класс */
+/* .hidden { display: none !important; } */
+
+/* Модалка статуса транзакции */
+#transaction-modal-hash {
+     word-break: break-all; /* Перенос длинных хэшей */
+}
