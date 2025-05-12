@@ -274,6 +274,6 @@ window.wallet = {
     getSigner: () => signer,       // Возвращаем текущий signer
     getChainId: () => currentChainId,   // Возвращаем текущий chain ID
     getSupportedNetworks: () => supportedNetworks, // Возвращаем список поддерживаемых сетей
-     getExplorerUrl, // Экспортируем функцию получения URL эксплорера
-     switchChain, // Экспортируем функцию переключения сети (опционально)
+    getExplorerUrl, // Экспортируем функцию получения URL эксплорера
+    switchChain, // Экспортируем функцию переключения сети (опционально)
 };

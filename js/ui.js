@@ -58,8 +58,8 @@ const ui = {
         // swapToBalance - обычно не показывается для свапа на UI
         swapDetails: $('swap-details'), // Bootstrap Alert
         getSwapQuoteBtn: $('get-swap-quote-btn'),
-        approveSwapBtn: $('approve-swap-btn'),
-        executeSwapBtn: $('execute-swap-btn'),
+        approveSwapBtn: $('approve-swap-btn'), // Кнопка апрува
+        executeSwapBtn: $('execute-swap-btn'), // Кнопка выполнения
         swapStatus: $('swap-status'), // <p> для статуса
 
         // Bridge элементы
@@ -72,12 +72,12 @@ const ui = {
         bridgeToTokenBtn: $('bridge-to-token-btn'),
         bridgeDetails: $('bridge-details'), // Bootstrap Alert
         getBridgeQuoteBtn: $('get-bridge-quote-btn'),
-        approveBridgeBtn: $('approve-bridge-btn'),
-        executeBridgeBtn: $('execute-bridge-btn'),
+        approveBridgeBtn: $('approve-bridge-btn'), // Кнопка апрува
+        executeBridgeBtn: $('execute-bridge-btn'), // Кнопка выполнения
         bridgeStatus: $('bridge-status'), // <p> для статуса
 
         // Telegram элементы
-        telegramStatus: $('telegram-status'), // <p> Lead
+        telegramStatus: $('telegram-status'), // <p lead>
         linkTelegramBtn: $('link-telegram-btn'), // Bootstrap Button
         unlinkTelegramBtn: $('unlink-telegram-btn'), // Bootstrap Button
         telegramLinkingInfo: $('telegram-linking-info'), // Bootstrap Alert
@@ -138,20 +138,17 @@ const ui = {
                  }
              });
              // Кнопка подключения Telegram всегда активна, если не подключен кошелек
-             // (логика в telegram.js будет проверять наличие аккаунта перед запросом кода)
              ui.elements.linkTelegramBtn.disabled = false;
-             // Кнопка отключения Telegram активна только если кошелек подключен И аккаунт связан (логика в telegram.js)
-             // Здесь просто отключаем, если кошелек не подключен
-              ui.elements.unlinkTelegramBtn.disabled = !isConnected;
+             // Кнопка отключения Telegram активна только если кошелек подключен И аккаунт связан
+             ui.elements.unlinkTelegramBtn.disabled = !isConnected || !telegram.telegramLinkedAccount(); // Зависит от состояния telegramLinkedAccount
         });
-
          // Отдельно управляем доступностью кнопок "Разрешить" и "Выполнить" в Swap/Bridge
          // Они изначально скрыты и включаются/отключаются логикой swap.js и bridge.js
     },
 
 
     // Модальное окно выбора токена (используем Bootstrap Modal JS)
-    showTokenPickerModal(tokenList, currentChainId) {
+    showTokenPickerModal(tokenList) { // Удален currentChainId из аргументов, т.к. chain_id есть в объекте токена
         ui.elements.tokenListUl.innerHTML = ''; // Очистить список
 
         tokenList.forEach(token => {
@@ -162,7 +159,9 @@ const ui = {
             li.dataset.symbol = token.symbol;
             li.dataset.decimals = token.decimals;
             li.dataset.chainId = token.chain_id; // Используем chain_id токена из бэкенда
-            li.innerHTML = `<img src="${token.logo_uri}" alt="${token.symbol}" class="me-2 rounded-circle" style="width: 20px; height: 20px;"> ${token.symbol} - ${token.name}`; // Bootstrap классы для картинки
+            // Убедимся, что logo_uri - строка и не пустая, прежде чем использовать в img src
+             const imgSrc = (token.logo_uri && typeof token.logo_uri === 'string') ? token.logo_uri : 'https://via.placeholder.com/20';
+            li.innerHTML = `<img src="${imgSrc}" alt="${token.symbol}" class="me-2 rounded-circle" style="width: 20px; height: 20px;"> ${token.symbol} - ${token.name}`; // Bootstrap классы для картинки
             ui.elements.tokenListUl.appendChild(li);
         });
 
@@ -218,9 +217,10 @@ const ui = {
          swapDetailsElement.classList.remove('d-none'); // Показываем alert
         swapDetailsElement.innerHTML = `
             <p class="mb-1">Получить: ~${utils.formatTokenAmount(details.toAmount, details.toToken.decimals, 6)} ${details.toToken.symbol}</p>
-            <p class="mb-1">Протокол: ${details.protocol || 'Агрегатор'}</p>
-            <p class="mb-0">Примерная комиссия сети: ${utils.formatTokenAmount(details.gasCost?.amount, details.gasCost?.decimals, 6)} ${details.gasCost?.token.symbol || 'ETH/MATIC'}</p>
+            <p class="mb-1">Протокол: ${details.tool || details.protocol || 'Агрегатор'}</p>
+            <p class="mb-0">Примерная комиссия сети: ${details.gasCosts?.[0]?.token ? `${utils.formatTokenAmount(ethers.BigNumber.from(details.gasCosts[0].amount), details.gasCosts[0].token.decimals, 6)} ${details.gasCosts[0].token.symbol}` : 'N/A'}</p>
             <!-- Добавьте другие детали по необходимости -->
+             ${details.estimatedDuration ? `<p class="mb-0">Примерное время: ${Math.ceil(details.estimatedDuration / 60)} мин</p>` : ''}
         `;
     },
 
@@ -240,21 +240,22 @@ const ui = {
          defaultOption.value = "";
          defaultOption.textContent = "-- Выберите сеть --";
          defaultOption.disabled = true;
-         defaultOption.selected = (selectedChainId === null || selectedChainId === undefined); // Выбираем по умолчанию, если selectedChainId не указан
+         defaultOption.selected = true; // Всегда выбираем по умолчанию при заполнении
          selectElement.appendChild(defaultOption);
 
 
         networks.forEach(network => {
             const option = document.createElement('option');
-            option.value = network.chainId;
-            option.textContent = network.name;
+            option.value = network.chainId; // Используем chainId
+            option.textContent = network.name; // Используем name
             if (selectedChainId !== null && network.chainId === selectedChainId) {
                 option.selected = true;
+                defaultOption.selected = false; // Если нашли выбранный, снимаем выбор с дефолтного
             }
             selectElement.appendChild(option);
         });
-         // Триггернуть событие change, если был выбран элемент по умолчанию или установлен selectedChainId
-         if (selectedChainId !== null || networks.length > 0) {
+         // Триггернуть событие change, если был выбран какой-то элемент (не дефолтный)
+         if (selectedChainId !== null) {
               selectElement.dispatchEvent(new Event('change'));
          }
     },
@@ -269,14 +270,15 @@ const ui = {
              return;
          }
          bridgeDetailsElement.classList.remove('d-none'); // Показываем alert
-         // Пример, структура деталей зависит от выбранного агрегатора/моста
+         // Структура деталей из LiFi route
          bridgeDetailsElement.innerHTML = `
              <p class="mb-1">Путь: ${details.fromToken.symbol} на ${details.fromChain.name} → ${details.toToken.symbol} на ${details.toChain.name}</p>
-             <p class="mb-1">Ожидаемое получение: ~${utils.formatTokenAmount(details.toAmount, details.toToken.decimals, 6)} ${details.toToken.symbol}</p>
-             <p class="mb-1">Протокол: ${details.protocol || 'Агрегатор'}</p>
-             <p class="mb-1">Примерное время: ${details.estimatedTime || 'N/A'}</p>
-              <p class="mb-0">Примерная комиссия сети: ${utils.formatTokenAmount(details.gasCost?.amount, details.gasCost?.decimals, 6)} ${details.gasCost?.token.symbol || 'ETH/MATIC'}</p>
-              <!-- Добавьте другие детали по необходимости -->
+             <p class="mb-1">Ожидаемое получение: ~${utils.formatTokenAmount(ethers.BigNumber.from(details.toAmount), details.toToken.decimals, 6)} ${details.toToken.symbol}</p>
+             <p class="mb-1">Протокол: ${details.steps?.[0]?.tool || 'Агрегатор'}</p>
+             <p class="mb-0">Примерное время: ${details.steps?.[0]?.estimate?.duration ? `${Math.ceil(details.steps[0].estimate.duration / 60)} мин` : 'N/A'}</p>
+              <p class="mb-0">Примерная комиссия сети (старт): ${details.gasCosts?.[0]?.token ? `${utils.formatTokenAmount(ethers.BigNumber.from(details.gasCosts[0].amount), details.gasCosts[0].token.decimals, 6)} ${details.gasCosts[0].token.symbol}` : 'N/A'}</p>
+              <!-- Добавьте другие детали из route, например, список шагов -->
+               ${details.steps && details.steps.length > 1 ? '<p class="mb-1">Шаги:</p><ul>' + details.steps.map(step => `<li>${step.tool} (${step.type}) - ${step.action.fromToken.symbol} → ${step.action.toToken.symbol}</li>`).join('') + '</ul>' : ''}
          `;
     },
 
@@ -295,6 +297,8 @@ const ui = {
              ui.elements.linkTelegramBtn.classList.remove('d-none');
              ui.elements.unlinkTelegramBtn.classList.add('d-none');
          }
+          // Обновляем состояние блокировки кнопки отключения в зависимости от статуса связки
+         ui.elements.unlinkTelegramBtn.disabled = !isLinked; // Кнопка отвязки активна только если связан
     },
 
     showTelegramLinkingCode(code, botUsername) {
@@ -312,22 +316,28 @@ const ui = {
 
      // Модальное окно статуса транзакции (используем Bootstrap Modal JS)
      showTransactionStatusModal(statusText, transactionHash, explorerUrl = null) {
+        // Обновляем текст статуса в модалке
         ui.elements.transactionModalStatus.textContent = `Статус: ${statusText}`;
+        // Обновляем хэш транзакции
         if (transactionHash) {
              ui.elements.transactionModalHash.textContent = `Хэш: ${utils.formatAddress(transactionHash)}`;
-             if (explorerUrl) {
-                 ui.elements.transactionModalExplorerLink.href = explorerUrl;
-                 ui.elements.transactionModalExplorerLink.classList.remove('d-none');
-             } else {
-                 ui.elements.transactionModalExplorerLink.classList.add('d-none');
-             }
         } else {
-            ui.elements.transactionModalHash.textContent = '';
+             ui.elements.transactionModalHash.textContent = '';
+        }
+        // Обновляем ссылку на эксплорер
+        if (explorerUrl) {
+            ui.elements.transactionModalExplorerLink.href = explorerUrl;
+            ui.elements.transactionModalExplorerLink.classList.remove('d-none');
+        } else {
             ui.elements.transactionModalExplorerLink.classList.add('d-none');
         }
-         // Показываем модалку через Bootstrap JS
-        if (transactionStatusModalInstance) {
-            transactionStatusModalInstance.show();
+
+         // Показываем модалку только если она еще не показана.
+         // Это предотвращает мерцание, если статус быстро обновляется.
+        if (!transactionStatusModalInstance._isShown) {
+             if (transactionStatusModalInstance) {
+                 transactionStatusModalInstance.show();
+             }
         }
      },
 
@@ -337,7 +347,6 @@ const ui = {
              transactionStatusModalInstance.hide();
          }
      }
-
 };
 
 // Экспорт ui объекта (делаем его глобальным для простоты Vanilla JS)

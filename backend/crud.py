@@ -53,13 +53,21 @@ def create_token(db: Session, token: schemas.TokenCreate):
 # Функция для заполнения БД начальными токенами (для курсовой)
 def populate_tokens(db: Session):
     # Пример данных. В реальном проекте лучше загружать из файла или API.
+    BACKEND_STATIC_URL_PREFIX = "http://127.0.0.1:8001/static/images/"  # !!! УКАЖИТЕ ПРАВИЛЬНЫЙ АДРЕС И ПОРТ ВАШЕГО БЭКЕНДА !!!
+
     initial_tokens_data = [
-        {"chain_id": 1, "address": "NATIVE", "symbol": "ETH", "name": "Ethereum", "decimals": 18, "logo_uri": "https://cryptologos.cc/logos/ethereum-eth-logo.svg?v=025"},
-        {"chain_id": 1, "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "symbol": "WETH", "name": "Wrapped Ether", "decimals": 18, "logo_uri": "https://cryptologos.cc/logos/weth-weth-logo.png?v=025"},
-        {"chain_id": 1, "address": "0xdAC17f958D2ee523a2206206994597C13D831ec7", "symbol": "USDT", "name": "Tether USD", "decimals": 6, "logo_uri": "https://cryptologos.cc/logos/tether-usdt-logo.svg?v=025"},
-        {"chain_id": 137, "address": "NATIVE", "symbol": "MATIC", "name": "Polygon", "decimals": 18, "logo_uri": "https://cryptologos.cc/logos/polygon-matic-logo.svg?v=025"},
-        {"chain_id": 137, "address": "0x0b3F868E5BEc070DDe2Cc1Fb5f96bEfa269d9aa7", "symbol": "WMATIC", "name": "Wrapped Matic", "decimals": 18, "logo_uri": "https://cryptologos.cc/logos/polygon-matic-logo.svg?v=025"},
-        {"chain_id": 137, "address": "0x2791Bca1f2de4661ED88A30C99A7a92CfEf0Df44", "symbol": "USDC", "name": "USD Coin", "decimals": 6, "logo_uri": "https://cryptologos.cc/logos/usd-coin-usdc-logo.svg?v=025"},
+        {"chain_id": 1, "address": "NATIVE", "symbol": "ETH", "name": "Ethereum", "decimals": 18,
+         "logo_uri": BACKEND_STATIC_URL_PREFIX + "eth.png"},
+        {"chain_id": 1, "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "symbol": "WETH",
+         "name": "Wrapped Ether", "decimals": 18, "logo_uri": BACKEND_STATIC_URL_PREFIX + "weth.png"},
+        {"chain_id": 1, "address": "0xdAC17f958D2ee523a2206206994597C13D831ec7", "symbol": "USDT", "name": "Tether USD",
+         "decimals": 6, "logo_uri": BACKEND_STATIC_URL_PREFIX + "usdt.png"},
+        {"chain_id": 137, "address": "NATIVE", "symbol": "MATIC", "name": "Polygon", "decimals": 18,
+         "logo_uri": BACKEND_STATIC_URL_PREFIX + "matic.svg"},
+        {"chain_id": 137, "address": "0x0b3F868E5BEc070DDe2Cc1Fb5f96bEfa269d9aa7", "symbol": "WMATIC",
+         "name": "Wrapped Matic", "decimals": 18, "logo_uri": BACKEND_STATIC_URL_PREFIX + "matic.png"},
+        {"chain_id": 137, "address": "0x2791Bca1f2de4661ED88A30C99A7a92CfEf0Df44", "symbol": "USDC", "name": "USD Coin",
+         "decimals": 6, "logo_uri": BACKEND_STATIC_URL_PREFIX + "usdc.png"},
         # Добавьте другие токены и сети
     ]
 

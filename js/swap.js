@@ -1,24 +1,22 @@
-// Переменные состояния для выбранных токенов и котировки
+// js/swap.js
+
 let selectedFromToken = null;
 let selectedToToken = null;
-let currentSwapQuote = null; // Текущая полученная котировка
+let currentSwapQuote = null;
 
 // TODO: АДРЕС КОНТРАКТА АГРЕГАТОРА СВАПОВ НА КАЖДОЙ СЕТИ
-// Этот адрес нужен для проверки и выполнения APPROVE
-// В реальном приложении вы получите его из документации или SDK выбранного агрегатора (Li.Finance, 1inch и т.д.)
+// Получите их из документации агрегатора (например, Li.Finance, 1inch V5 Router)
+// Используйте checksummed адреса для надежности
 const SWAP_SPENDER_ADDRESSES = {
     1: "0x...Ethereum_Spender_Address...", // Ethereum Mainnet
     5: "0x...Goerli_Spender_Address...",   // Goerli Testnet
-     11155111: "0x...Sepolia_Spender_Address...", // Sepolia Testnet
+    11155111: "0x...Sepolia_Spender_Address...", // Sepolia Testnet
     137: "0x...Polygon_Spender_Address...", // Polygon Mainnet
     80001: "0x...Mumbai_Spender_Address...", // Polygon Mumbai Testnet
     // Добавьте адреса для других сетей
 };
 
 
-// --- Обработчики событий и основная логика ---
-
-// Обработка клика по кнопке выбора токена (FROM или TO)
 async function handleTokenSelectClick(type) {
     const account = wallet.getAccount();
     const currentChainId = wallet.getChainId();
@@ -28,8 +26,8 @@ async function handleTokenSelectClick(type) {
         return;
     }
 
-     // Проверяем, поддерживается ли текущая сеть
-     if (!wallet.getSupportedNetworks().find(net => net.chainId === currentChainId)) {
+     const networkConfig = wallet.getSupportedNetworks().find(net => net.chainId === currentChainId);
+     if (!networkConfig) {
           ui.updateSwapStatus(`Текущая сеть (ID ${currentChainId}) не поддерживается для свапов.`);
           return;
      }
@@ -37,102 +35,84 @@ async function handleTokenSelectClick(type) {
 
     ui.updateSwapStatus("Загрузка списка токенов...");
     try {
-         // Получаем список токенов с бэкенда для текущей сети
         const tokenList = await utils.getTokenList(currentChainId);
 
         if (tokenList.length === 0) {
-            ui.updateSwapStatus(`Не удалось загрузить список токенов для сети ID ${currentChainId}.`);
+            ui.updateSwapStatus(`Не удалось загрузить список токенов для сети ${networkConfig.name}.`);
             return;
         }
 
-        ui.updateSwapStatus(""); // Очищаем статус после загрузки
+        ui.updateSwapStatus("");
 
-        // Показываем модальное окно с загруженным списком
         ui.showTokenPickerModal(tokenList, currentChainId);
 
-        // Устанавливаем обработчик клика на элементы списка токенов внутри модалки
-        // Используем делегирование событий для списка
         ui.elements.tokenListUl.onclick = async (event) => {
-            const target = event.target.closest('li'); // Находим ближайший li элемент
+            const target = event.target.closest('li');
             if (target) {
                 const token = {
                     address: target.dataset.address,
                     symbol: target.dataset.symbol,
                     decimals: parseInt(target.dataset.decimals, 10),
-                     chainId: parseInt(target.dataset.chainId, 10), // Получаем chainId из dataset
-                    logo_uri: target.querySelector('img')?.src // Можно добавить получение logoURI
+                    chainId: parseInt(target.dataset.chainId, 10),
+                    logo_uri: target.querySelector('img')?.src
                 };
 
-                // Проверяем, что выбранный токен действительно на текущей сети
                  if (token.chainId !== currentChainId) {
-                     ui.hideTokenPickerModal(); // Закрываем модалку
-                     ui.updateSwapStatus(`Ошибка: Выбранный токен "${token.symbol}" находится на другой сети (ID ${token.chainId}), а кошелек на ID ${currentChainId}.`);
                      console.error("Mismatch between selected token chain and current wallet chain.");
-                     return; // Прерываем выполнение
+                     ui.hideTokenPickerModal();
+                     ui.updateSwapStatus(`Ошибка: Выбранный токен "${token.symbol}" находится на другой сети (ID ${token.chainId}). Переключите кошелек или выберите другой токен.`);
+                     return;
                  }
-
 
                 if (type === 'from') {
                     selectedFromToken = token;
-                    ui.elements.swapFromTokenBtn.innerHTML = `<img src="${token.logo_uri}" alt="${token.symbol}" class="me-2 rounded-circle" style="width: 20px; height: 20px;"> ${token.symbol}`; // Обновляем кнопку с лого и символом
-                     // При выборе "отправить" токена, сразу обновить его баланс
+                    ui.elements.swapFromTokenBtn.innerHTML = `<img src="${token.logo_uri}" alt="${token.symbol}" class="me-2 rounded-circle" style="width: 20px; height: 20px;"> ${token.symbol}`;
                      updateCurrentBalances();
                 } else {
                     selectedToToken = token;
-                    ui.elements.swapToTokenBtn.innerHTML = `<img src="${token.logo_uri}" alt="${token.symbol}" class="me-2 rounded-circle" style="width: 20px; height: 20px;"> ${token.symbol}`; // Обновляем кнопку с лого и символом
-                    // Для "получить" токена, баланс не так критичен сразу
-                     // updateCurrentBalances(); // Можно тоже обновить
+                    ui.elements.swapToTokenBtn.innerHTML = `<img src="${token.logo_uri}" alt="${token.symbol}" class="me-2 rounded-circle" style="width: 20px; height: 20px;"> ${token.symbol}`;
                 }
 
-                ui.hideTokenPickerModal(); // Скрываем модалку выбора токена
-                // Сбросить старую котировку и детали, так как токены изменились
+                ui.hideTokenPickerModal();
                 currentSwapQuote = null;
-                ui.updateSwapDetails(null); // Скрываем детали свапа
-                ui.elements.approveSwapBtn.classList.add('d-none'); // Скрываем кнопку апрува
-                ui.elements.executeSwapBtn.classList.add('d-none'); // Скрываем кнопку выполнения
-                 ui.updateSwapStatus("Выберите токены и сумму, затем нажмите 'Получить курс'."); // Обновляем статус
-
-                console.log(`Selected ${type} token: ${token.symbol} on chain ${token.chainId}`);
+                ui.updateSwapDetails(null);
+                ui.elements.approveSwapBtn.classList.add('d-none');
+                ui.elements.executeSwapBtn.classList.add('d-none');
+                 ui.updateSwapStatus("Выберите токены и сумму, затем нажмите 'Получить курс'.");
             }
         };
 
     } catch (error) {
-        console.error("Error handling token select click:", error);
+        console.error("Error handling swap token select click:", error);
         ui.updateSwapStatus(`Ошибка: ${error.message}`);
-        ui.hideTokenPickerModal(); // Скрываем модалку в случае ошибки
+        ui.hideTokenPickerModal();
     }
 }
 
-
-// Обновляет отображение баланса для выбранного токена отправки
 async function updateCurrentBalances() {
     const account = wallet.getAccount();
     const provider = wallet.getProvider();
-     const chainId = wallet.getChainId();
+    const chainId = wallet.getChainId();
 
     if (!account || !provider || !chainId) {
-         ui.updateTokenBalanceDisplay('swap-from-balance', null, 18); // Сбросить отображение
+         ui.updateTokenBalanceDisplay('swap-from-balance', null, 18);
         return;
     }
 
-    // Обновляем баланс только для выбранного токена отправки, если он на текущей сети
     if (selectedFromToken && selectedFromToken.chainId === chainId) {
-        ui.updateTokenBalanceDisplay('swap-from-balance', 'Загрузка...', selectedFromToken.decimals); // Показываем "Загрузка..."
+        ui.updateTokenBalanceDisplay('swap-from-balance', 'Загрузка...', selectedFromToken.decimals);
         const balance = await utils.getTokenBalance(selectedFromToken.address, account, provider, selectedFromToken.decimals);
         ui.updateTokenBalanceDisplay('swap-from-balance', balance, selectedFromToken.decimals);
     } else {
-         // Если токен не выбран или не на текущей сети, сбрасываем баланс
          ui.updateTokenBalanceDisplay('swap-from-balance', null, 18);
     }
 }
 
-
-// Обработка клика по кнопке "Получить курс"
 async function handleGetSwapQuote() {
     const account = wallet.getAccount();
     const chainId = wallet.getChainId();
     const provider = wallet.getProvider();
-    const amountString = ui.elements.swapFromAmount.value; // Берем значение из поля ввода
+    const amountString = ui.elements.swapFromAmount.value;
 
     if (!account || !chainId || !provider) {
         ui.updateSwapStatus("Подключите кошелек.");
@@ -142,8 +122,7 @@ async function handleGetSwapQuote() {
         ui.updateSwapStatus("Выберите токены для свапа.");
         return;
     }
-     // Убедимся, что выбранные токены на текущей сети кошелька
-     if (selectedFromToken.chainId !== chainId || selectedToToken.chainId !== chainId) {
+    if (selectedFromToken.chainId !== chainId || selectedToToken.chainId !== chainId) {
          ui.updateSwapStatus(`Выбранные токены не соответствуют текущей сети "${wallet.getSupportedNetworks().find(n=>n.chainId === chainId)?.name || chainId}".`);
          return;
      }
@@ -157,12 +136,11 @@ async function handleGetSwapQuote() {
          return;
      }
 
-     // Парсим введенную сумму в BigNumber
      let amountBigNumber;
      try {
          amountBigNumber = utils.parseTokenAmount(amountString, selectedFromToken.decimals);
      } catch (e) {
-         ui.updateSwapStatus(e.message); // Показываем ошибку парсинга из utils
+         ui.updateSwapStatus(e.message);
          ui.elements.swapToAmount.value = '';
          ui.updateSwapDetails(null);
          ui.elements.approveSwapBtn.classList.add('d-none');
@@ -170,8 +148,6 @@ async function handleGetSwapQuote() {
          return;
      }
 
-
-     // Проверяем баланс перед запросом котировки
      const balance = await utils.getTokenBalance(selectedFromToken.address, account, provider, selectedFromToken.decimals);
      if (amountBigNumber.gt(balance)) {
           ui.updateSwapStatus(`Недостаточно средств. Ваш баланс ${utils.formatTokenAmount(balance, selectedFromToken.decimals)} ${selectedFromToken.symbol}.`);
@@ -182,81 +158,65 @@ async function handleGetSwapQuote() {
          return;
      }
 
-
     ui.updateSwapStatus("Получение котировки свапа...");
-    ui.elements.approveSwapBtn.classList.add('d-none'); // Скрываем кнопки
+    ui.elements.approveSwapBtn.classList.add('d-none');
     ui.elements.executeSwapBtn.classList.add('d-none');
-     ui.elements.getSwapQuoteBtn.disabled = true; // Отключаем кнопку
+    ui.elements.getSwapQuoteBtn.disabled = true;
     ui.elements.swapToAmount.value = 'Загрузка...';
-    ui.updateSwapDetails(null); // Скрываем старые детали
-
+    ui.updateSwapDetails(null);
 
     try {
-        // TODO: ИСПОЛЬЗУЙТЕ SDK/API ВАШЕГО АГРЕГАТОРА СВАПОВ ДЛЯ ПОЛУЧЕНИЯ КОТИРОВКИ
-        // ПРИМЕР с Li.Finance SDK (после установки и инициализации)
-        // const route = await LiFi.getRoute({
+        // TODO: ИНТЕГРАЦИЯ С АГРЕГАТОРОМ СВАПОВ
+        // Пример с Li.Finance SDK:
+        // const routeResult = await LiFi.getRoute({
         //      fromChainId: chainId,
-        //      toChainId: chainId, // Для свапа цепь та же
-        //      fromTokenAddress: selectedFromToken.address === 'NATIVE' ? '0x0' : selectedFromToken.address, // LiFi использует '0x0' для нативных
+        //      toChainId: chainId,
+        //      fromTokenAddress: selectedFromToken.address === 'NATIVE' ? '0x0' : selectedFromToken.address,
         //      toTokenAddress: selectedToToken.address === 'NATIVE' ? '0x0' : selectedToToken.address,
-        //      fromAmount: amountBigNumber.toString(), // Агрегаторы часто требуют строку BigNumber
-        //      fromAddress: account // Некоторые API требуют адрес отправителя
+        //      fromAmount: amountBigNumber.toString(),
+        //      fromAddress: account
         // });
-        // currentSwapQuote = route.route; // В LiFi котировка находится в поле .route
+        // currentSwapQuote = routeResult.route; // Сохраняем route объект
 
-        // --- ЗАГЛУШКА: Имитация получения котировки ---
-         await new Promise(resolve => setTimeout(resolve, 1500)); // Имитация задержки сети
-         // Имитируем структуру, похожую на ответ агрегатора
-         const mockToAmount = amountBigNumber.mul(98).div(100); // Имитация проскальзывания/комиссии
+        // --- ЗАГЛУШКА ---
+         await new Promise(resolve => setTimeout(resolve, 1500));
+         const mockToAmount = amountBigNumber.mul(98).div(100);
          currentSwapQuote = {
              fromToken: selectedFromToken,
              toToken: selectedToToken,
              fromAmount: amountBigNumber,
-             toAmount: mockToAmount, // Рассчитанная сумма получения
-             protocol: 'Тестовый Uniswap V3', // Имя протокола
-             gasCost: { amount: ethers.utils.parseUnits('0.005', 18), decimals: 18, token: {symbol: 'ETH', name: 'Ethereum'} }, // Примерная комиссия сети
-             steps: [ /* Детали шагов */ ], // Агрегатор может возвращать шаги
-             estimate: { /* Дополнительные оценки */ }
-             // В реальной котировке от агрегатора будет намного больше данных,
-             // включая rawTransaction или Data для вызова контракта
+             toAmount: mockToAmount,
+             protocol: 'Тестовый Uniswap V3',
+             gasCost: { amount: ethers.utils.parseUnits('0.005', 18), decimals: 18, token: {symbol: 'ETH', name: 'Ethereum'} },
+             // В реальной котировке будет transactionRequest или другие детали для выполнения
          };
         // --- КОНЕЦ ЗАГЛУШКИ ---
 
-
         ui.updateSwapDetails(currentSwapQuote);
-        // Отображаем ожидаемую сумму получения
         ui.elements.swapToAmount.value = utils.formatTokenAmount(currentSwapQuote.toAmount, selectedToToken.decimals);
 
-
-        // Проверяем необходимость апрува для токена отправки (если это не нативная валюта)
-        if (selectedFromToken.address.toLowerCase() !== 'native') { // Проверяем регистр
+        if (selectedFromToken.address.toLowerCase() !== 'native') {
             const spenderAddress = SWAP_SPENDER_ADDRESSES[chainId];
             if (!spenderAddress) {
-                 ui.updateSwapStatus(`Ошибка: Неизвестный адрес контракта агрегатора для текущей сети ID ${chainId}.`);
-                 return; // Прерываем, т.к. не можем проверить/сделать апрув
+                 ui.updateSwapStatus(`Ошибка: Неизвестный адрес контракта агрегатора для текущей сети.`);
+                 return;
             }
-
             const allowance = await utils.getTokenAllowance(selectedFromToken.address, account, spenderAddress, provider);
 
-            // Сравниваем разрешение с суммой, которую хотим отправить
-            // Если разрешение меньше, чем сумма к отправке, или сильно меньше MaxUint256 (если апрувим на максимум)
-            if (allowance.lt(amountBigNumber)) { // Сравниваем с требуемой суммой
+            if (allowance.lt(amountBigNumber)) {
                 ui.updateSwapStatus(`Требуется разрешение на трату ${selectedFromToken.symbol}.`);
-                ui.elements.approveSwapBtn.classList.remove('d-none'); // Показываем кнопку апрува
-                ui.elements.executeSwapBtn.classList.add('d-none'); // Скрываем кнопку выполнения
+                ui.elements.approveSwapBtn.classList.remove('d-none');
+                ui.elements.executeSwapBtn.classList.add('d-none');
             } else {
-                // Апрув не нужен или уже есть достаточный
                 ui.updateSwapStatus(`Готово к свапу.`);
-                 ui.elements.approveSwapBtn.classList.add('d-none'); // Скрываем кнопку апрува
-                ui.elements.executeSwapBtn.classList.remove('d-none'); // Показываем кнопку выполнения
+                ui.elements.approveSwapBtn.classList.add('d-none');
+                ui.elements.executeSwapBtn.classList.remove('d-none');
             }
         } else {
-            // Нативная валюта (ETH, MATIC) - апрув не нужен
             ui.updateSwapStatus(`Готово к свапу.`);
-             ui.elements.approveSwapBtn.classList.add('d-none');
+            ui.elements.approveSwapBtn.classList.add('d-none');
             ui.elements.executeSwapBtn.classList.remove('d-none');
         }
-
 
     } catch (error) {
         console.error("Error getting swap quote:", error);
@@ -266,117 +226,97 @@ async function handleGetSwapQuote() {
          }
         ui.updateSwapStatus(errorMessage);
         ui.elements.swapToAmount.value = 'Ошибка';
-        ui.updateSwapDetails(null); // Скрываем детали
-         ui.elements.approveSwapBtn.classList.add('d-none');
-         ui.elements.executeSwapBtn.classList.add('d-none');
-         currentSwapQuote = null; // Сброс котировки
+        ui.updateSwapDetails(null);
+        ui.elements.approveSwapBtn.classList.add('d-none');
+        ui.elements.executeSwapBtn.classList.add('d-none');
+        currentSwapQuote = null;
     } finally {
-         ui.elements.getSwapQuoteBtn.disabled = false; // Включаем кнопку обратно
+        ui.elements.getSwapQuoteBtn.disabled = false;
     }
 }
 
-
-// Обработка клика по кнопке "Разрешить Токен"
 async function handleApproveSwap() {
     const account = wallet.getAccount();
     const signer = wallet.getSigner();
-    const chainId = wallet.getChainId(); // Текущая сеть кошелька
-    const amountString = ui.elements.swapFromAmount.value; // Берем сумму из поля ввода
+    const chainId = wallet.getChainId();
+    const amountString = ui.elements.swapFromAmount.value;
 
-     if (!account || !signer || !chainId || !selectedFromToken) {
+    if (!account || !signer || !chainId || !selectedFromToken) {
         ui.updateSwapStatus("Ошибка: Не удалось выполнить апрув (нет кошелька или токена).");
         return;
     }
 
-     if (selectedFromToken.address.toLowerCase() === 'native') {
+    if (selectedFromToken.address.toLowerCase() === 'native') {
          ui.updateSwapStatus("Нативная валюта не требует апрува.");
          ui.elements.approveSwapBtn.classList.add('d-none');
          ui.elements.executeSwapBtn.classList.remove('d-none');
          return;
      }
 
-     // Получаем адрес спенаера для текущей сети
-     const spenderAddress = SWAP_SPENDER_ADDRESSES[chainId];
+    const spenderAddress = SWAP_SPENDER_ADDRESSES[chainId];
      if (!spenderAddress) {
           ui.updateSwapStatus(`Ошибка: Неизвестный адрес контракта агрегатора для текущей сети ID ${chainId}.`);
           return;
      }
 
-     // Парсим введенную сумму в BigNumber (для апрува обычно используют MaxUint256)
      let amountBigNumber;
      try {
-         // В большинстве случаев для DEX/агрегаторов лучше апрувить на MaxUint256,
-         // чтобы не просить апрув при каждой транзакции.
-          amountBigNumber = ethers.constants.MaxUint256; // Максимальное возможное значение uint256
-          // Или можно использовать amountString, но тогда потребуется апрув для каждой новой суммы
-          // amountBigNumber = utils.parseTokenAmount(amountString, selectedFromToken.decimals);
+          amountBigNumber = ethers.constants.MaxUint256;
      } catch (e) {
-         ui.updateSwapStatus("Некорректная сумма для апрува."); // Эта ошибка маловероятна с MaxUint256
+         ui.updateSwapStatus("Некорректная сумма для апрува.");
          return;
      }
 
     ui.updateSwapStatus(`Запрос разрешения на ${selectedFromToken.symbol}...`);
-     ui.elements.approveSwapBtn.disabled = true; // Отключить кнопку во время выполнения
-
+    ui.elements.approveSwapBtn.disabled = true;
 
     try {
-        // Вызываем вспомогательную функцию для апрува
         const receipt = await utils.approveToken(selectedFromToken.address, spenderAddress, amountBigNumber, signer);
 
-        // После успешного апрува, снова проверяем его, чтобы обновить UI
-         // Ждем немного после подтверждения транзакции перед проверкой
-         await new Promise(resolve => setTimeout(resolve, 3000)); // Ждем 3 секунды
-         const newAllowance = await utils.getTokenAllowance(selectedFromToken.address, account, spenderAddress, wallet.getProvider());
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        const newAllowance = await utils.getTokenAllowance(selectedFromToken.address, account, spenderAddress, wallet.getProvider());
 
-         // Проверяем, достаточно ли теперь разрешения для СУММЫ ИЗ ПОЛЯ ВВОДА
-          const currentInputAmount = utils.parseTokenAmount(amountString, selectedFromToken.decimals);
+        const currentInputAmount = ui.elements.swapFromAmount.value;
+        const inputAmountBigNumber = utils.parseTokenAmount(currentInputAmount, selectedFromToken.decimals);
 
-         if (newAllowance.gte(currentInputAmount)) { // Проверяем, достаточно ли разрешения для введенной суммы
-             ui.updateSwapStatus("Разрешение получено. Готово к свапу.");
-             ui.elements.approveSwapBtn.classList.add('d-none'); // Скрываем апрув
-             ui.elements.executeSwapBtn.classList.remove('d-none'); // Показываем выполнить
-         } else {
-             ui.updateSwapStatus("Разрешение получено, но недостаточно для этой суммы. Пожалуйста, получите новый курс и проверьте.");
-              ui.elements.approveSwapBtn.classList.remove('d-none'); // Кнопка апрува снова доступна
-              ui.elements.executeSwapBtn.classList.add('d-none'); // Кнопка выполнения скрыта
-         }
 
+        if (newAllowance.gte(inputAmountBigNumber)) {
+            ui.updateSwapStatus("Разрешение получено. Готово к свапу.");
+            ui.elements.approveSwapBtn.classList.add('d-none');
+            ui.elements.executeSwapBtn.classList.remove('d-none');
+        } else {
+            ui.updateSwapStatus("Разрешение получено, но недостаточно для этой суммы. Пожалуйста, получите новый курс и проверьте.");
+            ui.elements.approveSwapBtn.classList.remove('d-none');
+            ui.elements.executeSwapBtn.classList.add('d-none');
+        }
 
     } catch (error) {
         console.error("Approval failed:", error);
-        // Сообщение об ошибке уже выведено в approveToken, но можно обновить статус
-         // ui.updateSwapStatus(`Ошибка апрува: ${error.message}`); // Можно дублировать или улучшить сообщение
-         // Кнопка апрува остается или становится снова доступной
-         ui.elements.approveSwapBtn.classList.remove('d-none');
-         ui.elements.executeSwapBtn.classList.add('d-none');
+        ui.elements.approveSwapBtn.classList.remove('d-none');
+        ui.elements.executeSwapBtn.classList.add('d-none');
     } finally {
-         ui.elements.approveSwapBtn.disabled = false; // Включить кнопку
+        ui.elements.approveSwapBtn.disabled = false;
     }
 }
 
-
-// Обработка клика по кнопке "Выполнить Свап"
 async function handleExecuteSwap() {
     const account = wallet.getAccount();
     const signer = wallet.getSigner();
-    const chainId = wallet.getChainId(); // Текущая сеть кошелька
+    const chainId = wallet.getChainId();
 
-     if (!account || !signer || !chainId || !currentSwapQuote) {
+    if (!account || !signer || !chainId || !currentSwapQuote) {
         ui.updateSwapStatus("Ошибка: Котировка свапа не получена или кошелек не подключен.");
         return;
     }
 
-    // Убедимся, что текущая котировка соответствует выбранной сети
-     if (currentSwapQuote.fromToken.chainId !== chainId || currentSwapQuote.toToken.chainId !== chainId) {
+    if (currentSwapQuote.fromToken.chainId !== chainId || currentSwapQuote.toToken.chainId !== chainId) {
          ui.updateSwapStatus("Ошибка: Котировка получена для другой сети.");
          return;
      }
 
-     // Дополнительно можно проверить, что сумма в поле ввода не изменилась с момента получения котировки
-      const currentInputAmount = ui.elements.swapFromAmount.value;
+     const currentInputAmount = ui.elements.swapFromAmount.value;
       try {
           const inputAmountBigNumber = utils.parseTokenAmount(currentInputAmount, selectedFromToken.decimals);
-           // Сравниваем с fromAmount из котировки. Использовать .eq() для BigNumber
           if (!inputAmountBigNumber.eq(currentSwapQuote.fromAmount)) {
               ui.updateSwapStatus("Сумма изменена. Пожалуйста, получите новый курс.");
               ui.updateSwapDetails(null);
@@ -395,141 +335,108 @@ async function handleExecuteSwap() {
       }
 
 
-     ui.updateSwapStatus("Отправка транзакции свапа...");
-     ui.elements.executeSwapBtn.disabled = true; // Отключить кнопку во время выполнения
-     ui.elements.approveSwapBtn.disabled = true; // Отключить и апрув кнопку на всякий случай
+    ui.updateSwapStatus("Отправка транзакции свапа...");
+    ui.elements.executeSwapBtn.disabled = true;
+    ui.elements.approveSwapBtn.disabled = true;
 
     try {
-        // TODO: ИСПОЛЬЗУЙТЕ SDK/API ВАШЕГО АГРЕГАТОРА ДЛЯ ВЫПОЛНЕНИЯ СВАПА
-        // Это САМАЯ ВАЖНАЯ и зависящая от агрегатора часть.
-        // Агрегатор обычно предоставляет функцию execute() или populateTransaction()
-        // которая принимает signer и объект котировки (текущий currentSwapQuote).
-        // Она взаимодействует с кошельком пользователя для подписи и отправки.
-
-        // ПРИМЕР с Li.Finance SDK (выполнение маршрута):
+        // TODO: ВЫПОЛНЕНИЕ СВАПА ЧЕРЕЗ АГРЕГАТОР
+        // Пример с Li.Finance SDK:
         // const result = await LiFi.executeRoute(signer, currentSwapQuote);
-        // console.log("Swap transaction result:", result);
-        // const txHash = result.transactionHash; // Или result.txHash в зависимости от SDK
+        // const txHash = result.transactionHash;
 
-        // --- ЗАГЛУШКА: Имитация выполнения транзакции ---
+         // --- ЗАГЛУШКА ---
          ui.updateSwapStatus(`Запрос подписи транзакции в кошельке...`);
-         await new Promise((resolve, reject) => {
-              console.log("Имитация запроса подписи транзакции свапа...");
-             // В реальном коде здесь был бы вызов signer.sendTransaction({ data: currentSwapQuote.transaction.data, ... })
-             // или метода SDK.
-             // Кошелек откроет окно подтверждения. Если пользователь подтвердит, sendTransaction вернет объект транзакции.
-             setTimeout(() => {
-                 // Имитируем получение объекта транзакции после подтверждения
-                 const fakeTxHash = '0x' + Math.random().toString(16).slice(2).padEnd(64, '0'); // Пример фейкового хэша
-                 console.log("Имитация отправки транзакции, хэш:", fakeTxHash);
-                 // В реальном случае, tx = await signer.sendTransaction(...)
-                 // resolve(tx); // Передаем объект транзакции
-                 resolve({ hash: fakeTxHash, wait: () => new Promise(res => setTimeout(() => res({ transactionHash: fakeTxHash, status: 1 }), 10000)) }); // Имитируем tx object с методом wait
-             }, 2000); // Имитация ожидания подтверждения в кошельке
-         });
-
-         const tx = await new Promise((resolve, reject) => { /* ...имитация выше... */ }); // Получаем имитацию tx объекта
+         const fakeTxHash = '0x' + Math.random().toString(16).slice(2).padEnd(64, '0');
+         console.log("Имитация отправки транзакции свапа, хэш:", fakeTxHash);
+         const tx = { hash: fakeTxHash, wait: () => new Promise(res => setTimeout(() => res({ transactionHash: fakeTxHash, status: 1 }), 10000)) };
+        // --- КОНЕЦ ЗАГЛУШКИ ---
 
         ui.updateSwapStatus(`Транзакция отправлена! Ожидание подтверждения... Хэш: ${utils.formatAddress(tx.hash)}`);
-         const explorerUrl = wallet.getExplorerUrl(chainId) + tx.hash;
-         ui.showTransactionStatusModal("Отправлено, ожидание подтверждения...", tx.hash, explorerUrl);
+        const explorerUrl = wallet.getExplorerUrl(chainId);
+        ui.showTransactionStatusModal("Отправлено, ожидание подтверждения...", tx.hash, explorerUrl ? explorerUrl + tx.hash : null);
+
+        console.log("Waiting for transaction confirmation...");
+        const receipt = await tx.wait();
+
+        console.log("Swap transaction confirmed:", receipt);
+
+        if (receipt.status === 1) {
+            ui.updateSwapStatus(`Свап успешно выполнен!`);
+            ui.showTransactionStatusModal("Подтверждено!", receipt.transactionHash, explorerUrl ? explorerUrl + receipt.transactionHash : null);
+        } else {
+            ui.updateSwapStatus(`Транзакция не удалась. Проверьте в эксплорере.`);
+            ui.showTransactionStatusModal("Не удалась!", receipt.transactionHash, explorerUrl ? explorerUrl + receipt.transactionHash : null);
+        }
+
+        // TODO: ОПЦИОНАЛЬНО: Отправить информацию о транзакции на бэкенд для Telegram уведомления
 
 
-         // Ждем подтверждения транзакции в блокчейне
-         console.log("Waiting for transaction confirmation...");
-         const receipt = await tx.wait(); // Ждем 10 секунд в нашей имитации
+        await updateCurrentBalances();
 
-         console.log("Swap transaction confirmed:", receipt);
-
-         // Проверяем статус транзакции (0 = ошибка, 1 = успех)
-         if (receipt.status === 1) {
-             ui.updateSwapStatus(`Свап успешно выполнен!`);
-             ui.showTransactionStatusModal("Подтверждено!", receipt.transactionHash, wallet.getExplorerUrl(chainId) + receipt.transactionHash);
-         } else {
-              ui.updateSwapStatus(`Транзакция не удалась. Проверьте в эксплорере.`);
-             ui.showTransactionStatusModal("Не удалась!", receipt.transactionHash, wallet.getExplorerUrl(chainId) + receipt.transactionHash);
-         }
-
-
-         // TODO: ОПЦИОНАЛЬНО: Отправить информацию о транзакции на бэкенд для Telegram уведомления
-         // Например: utils.postData(`${utils.BACKEND_URL}/api/notify/swap`, { wallet_address: account, tx_hash: receipt.transactionHash, status: receipt.status });
-
-
-         // Обновить балансы после успешного (или неуспешного) свапа
-         await updateCurrentBalances();
-
-         // Очистить поля ввода и сбросить состояние
-         ui.elements.swapFromAmount.value = '';
-         ui.elements.swapToAmount.value = '';
-         ui.updateSwapDetails(null);
-          ui.elements.approveSwapBtn.classList.add('d-none');
-          ui.elements.executeSwapBtn.classList.add('d-none');
-          currentSwapQuote = null; // Сбросить котировку
-
+        ui.elements.swapFromAmount.value = '';
+        ui.elements.swapToAmount.value = '';
+        ui.updateSwapDetails(null);
+        ui.elements.approveSwapBtn.classList.add('d-none');
+        ui.elements.executeSwapBtn.classList.add('d-none');
+        currentSwapQuote = null;
 
     } catch (error) {
         console.error("Swap execution failed:", error);
-         // Обработка ошибок кошелька и транзакции
          let errorMessage = "Неизвестная ошибка выполнения свапа.";
          let txHashForModal = null;
-
          if (error.code === 4001) {
              errorMessage = "Транзакция отклонена пользователем.";
          } else if (error.transactionHash) {
-              // Ошибка произошла после отправки транзакции (например, недостаточно газа, revert)
               errorMessage = `Транзакция не удалась: ${error.message || 'Проверьте в эксплорере'}`;
               txHashForModal = error.transactionHash;
          } else if (error.message) {
              errorMessage = `Ошибка: ${error.message.substring(0, 100)}...`;
          }
+         const chainId = wallet.getChainId();
+         const explorerUrl = chainId ? wallet.getExplorerUrl(chainId) : null;
 
-         ui.updateSwapStatus(errorMessage);
-         ui.showTransactionStatusModal(errorMessage, txHashForModal, txHashForModal ? wallet.getExplorerUrl(chainId) + txHashForModal : null);
+        ui.updateSwapStatus(errorMessage);
+        ui.showTransactionStatusModal(errorMessage, txHashForModal, txHashForModal && explorerUrl ? explorerUrl + txHashForModal : null);
 
-         // Очистить модалку через несколько секунд, если это ошибка пользователя
          if (error.code === 4001) {
               setTimeout(() => ui.hideTransactionStatusModal(), 5000);
          }
 
-
     } finally {
-         ui.elements.executeSwapBtn.disabled = false; // Включить кнопку
-         ui.elements.approveSwapBtn.disabled = false; // Включить кнопку апрува
+        ui.elements.executeSwapBtn.disabled = false;
+        ui.elements.approveSwapBtn.disabled = false;
     }
 }
 
-// Сброс состояния свапа при смене сети или отключении кошелька
 function resetState() {
     selectedFromToken = null;
     selectedToToken = null;
     currentSwapQuote = null;
     ui.elements.swapFromAmount.value = '';
     ui.elements.swapToAmount.value = '';
-    // Сбрасываем текст кнопки выбора токена к дефолтному
     ui.elements.swapFromTokenBtn.innerHTML = 'Выберите Токен';
     ui.elements.swapToTokenBtn.innerHTML = 'Выберите Токен';
 
-    ui.updateSwapDetails(null); // Скрываем детали
-    ui.updateSwapStatus(""); // Очищаем статус
-    ui.updateTokenBalanceDisplay('swap-from-balance', null, 18); // Сбрасываем баланс
-     ui.elements.approveSwapBtn.classList.add('d-none'); // Скрываем кнопки
-     ui.elements.executeSwapBtn.classList.add('d-none');
+    ui.updateSwapDetails(null);
+    ui.updateSwapStatus("");
+    ui.updateTokenBalanceDisplay('swap-from-balance', null, 18);
+    ui.elements.approveSwapBtn.classList.add('d-none');
+    ui.elements.executeSwapBtn.classList.add('d-none');
 
-    // Обновляем балансы на всякий случай после сброса (покажет 0 если кошелек не подключен)
     updateCurrentBalances();
 }
 
-
-// Экспорт функций (делаем их доступными в глобальной области под объектом swap)
+// Экспорт функций
 window.swap = {
     handleTokenSelectClick,
     handleGetSwapQuote,
     handleApproveSwap,
     handleExecuteSwap,
-    updateCurrentBalances, // Экспортируем для вызова из wallet.js и app.js
-     resetState, // Экспортируем для вызова из wallet.js и app.js
+    updateCurrentBalances,
+    resetState,
 
-     // Опционально: экспортировать переменные состояния для отладки или доступа из app.js
+     // Экспортируем переменные для доступа из app.js
      selectedFromToken: () => selectedFromToken,
      selectedToToken: () => selectedToToken,
      currentSwapQuote: () => currentSwapQuote,

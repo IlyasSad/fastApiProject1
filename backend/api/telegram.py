@@ -17,7 +17,7 @@ def validate_and_checksum_address(address: str):
     if not re.match(r'^0x[a-fA-F0-9]{40}$', address):
         raise HTTPException(status_code=400, detail="Invalid wallet address format.")
     try:
-        return Web3.toChecksumAddress(address)
+        return Web3.to_checksum_address(address)
     except ValueError:
          # Should not happen if regex matches, but as a fallback
          raise HTTPException(status_code=400, detail="Invalid wallet address format.")

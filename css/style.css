@@ -1,63 +1,423 @@
+/* css/style.css */
+
+/* === CSS Variables for Theme === */
+:root {
+    --background-color: #0a0b0d; /* Very dark background */
+    --card-background: #1a1b1d;    /* Slightly lighter background for cards/sections */
+    --text-color: #f0f0f0;         /* Light text */
+    --secondary-text-color: #b0b0b0; /* Lighter gray text */
+    --border-color: #3a3b3d;       /* Subtle border color */
+    --primary-color: #5a67d8;      /* Bootstrap primary - keep as fallback */
+    --accent-color: #5a67d8;       /* Your primary accent color (can change) */
+    --accent-color-dark: #4c51bf;  /* Darker accent for hover */
+    --success-color: #48bb78;      /* Bootstrap success */
+    --warning-color: #f6e05e;      /* Bootstrap warning */
+    --danger-color: #f56565;       /* Bootstrap danger */
+    --spacing-unit: 1rem;          /* Base spacing */
+}
+
+/* === General Styles === */
 body {
-    font-family: sans-serif;
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* Example modern font stack */
     line-height: 1.6;
-    background-color: #f4f4f4;
-    color: #333;
-    padding-bottom: 50px; /* Отступ снизу, если футер будет */
+    background-color: var(--background-color);
+    color: var(--text-color);
+    padding-bottom: calc(5 * var(--spacing-unit)); /* More padding at the bottom */
 }
 
 .container {
-     /* Bootstrap уже управляет шириной и центрированием */
-     /* Можно добавить свои max-width если нужно */
+    /* Keep Bootstrap's container */
+    /* You can add max-width if needed, but Bootstrap handles this well */
+}
+
+header {
+    background: var(--card-background); /* Use card background for header */
+    color: var(--text-color);
+    padding: var(--spacing-unit) 0;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
 }
 
 header h1 {
-    /* Используем классы Bootstrap */
+    margin: 0;
+    font-size: 1.8em;
+    display: inline-block;
+    vertical-align: middle;
 }
 
-#wallet-status span {
-    margin-right: 10px;
+#wallet-status {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: var(--spacing-unit);
+    font-size: 0.9em;
+    color: var(--secondary-text-color); /* Status text lighter */
 }
 
-/* Bootstrap уже стилизует кнопки, инпуты, табы и модалки */
+#wallet-address, #wallet-network {
+    margin-right: calc(var(--spacing-unit) / 2);
+    font-weight: bold;
+}
 
+/* === Tab Navigation === */
+.nav-tabs {
+    border-bottom: none; /* Remove default Bootstrap border */
+    margin-bottom: var(--spacing-unit);
+}
+
+.nav-link {
+    color: var(--secondary-text-color); /* Inactive tab text */
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-right: var(--spacing-unit); /* Space between tabs */
+    transition: color 0.3s ease, border-bottom-color 0.3s ease;
+    background-color: transparent; /* Ensure no background */
+}
+
+.nav-link:hover {
+    color: var(--text-color); /* Hover text color */
+    border-bottom-color: var(--accent-color); /* Accent color border on hover */
+}
+
+.nav-link.active {
+    color: var(--text-color); /* Active tab text */
+    border-bottom-color: var(--accent-color); /* Accent color border for active tab */
+    font-weight: bold;
+    background-color: transparent; /* Ensure no background */
+}
+
+/* Fix for Bootstrap's tab-content padding and border */
+.tab-content {
+    padding: 0 !important; /* Remove Bootstrap padding */
+    border: none !important; /* Remove Bootstrap border */
+    background-color: transparent !important; /* Remove Bootstrap background */
+}
+
+
+/* === Form Sections / Cards === */
 .form-section {
-     /* Bootstrap border и padding уже есть от .tab-content */
-     /* Можно добавить тень или фон, если нужно */
-     /* box-shadow: 0 2px 5px rgba(0,0,0,0.05); */
-     background-color: #fff; /* Убираем фон от .tab-content */
-     padding: 20px; /* Убираем padding от .tab-content */
-     border: 1px solid #dee2e6 !important; /* Убираем border от .tab-content */
-     border-radius: 0.375rem; /* Закругление углов как у Bootstrap */
+    background-color: var(--card-background); /* Use card background color */
+    border: 1px solid var(--border-color);
+    padding: calc(2 * var(--spacing-unit));
+    border-radius: 0.5rem; /* Slightly rounded corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+}
+
+.form-section h2 {
+    color: var(--text-color);
+    margin-bottom: calc(2 * var(--spacing-unit));
+    font-size: 1.5em;
+    text-align: center;
 }
 
 
-/* Стиль для списка токенов в модалке */
+/* === Input Groups and Controls === */
+.input-group {
+    margin-bottom: calc(1.5 * var(--spacing-unit));
+    align-items: center; /* Vertically align items in input group */
+}
+
+.input-group label {
+     display: block; /* Labels above input */
+     margin-bottom: calc(var(--spacing-unit) / 2);
+     font-weight: bold;
+     color: var(--secondary-text-color); /* Label color */
+     font-size: 0.9em;
+}
+
+.form-control {
+    background-color: var(--background-color); /* Darker background for input */
+    color: var(--text-color); /* Light text color */
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem; /* Standard Bootstrap rounding */
+    padding: var(--spacing-unit); /* More padding inside input */
+    font-size: 1.1em;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-control:focus {
+    background-color: var(--background-color); /* Keep dark background on focus */
+    color: var(--text-color);
+    border-color: var(--accent-color); /* Accent color border on focus */
+    box-shadow: 0 0 0 0.25rem rgba(90, 103, 216, 0.25); /* Accent color shadow on focus */
+}
+
+.form-control::placeholder {
+    color: var(--secondary-text-color); /* Placeholder color */
+    opacity: 0.6;
+}
+
+/* Remove spinner arrows from number inputs */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+
+.token-select-btn {
+    background-color: var(--border-color); /* Background for token button */
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-left: none; /* No left border next to input */
+    padding: var(--spacing-unit) calc(var(--spacing-unit) * 1.5);
+    border-top-right-radius: 0.375rem; /* Match input rounding */
+    border-bottom-right-radius: 0.375rem; /* Match input rounding */
+    font-size: 1em;
+    display: flex; /* Allow flexbox for icon and text */
+    align-items: center;
+     /* Remove absolute positioning from previous attempt if it was there */
+     position: static !important;
+     transform: none !important;
+}
+
+.token-select-btn img {
+    width: 24px; /* Slightly larger icon */
+    height: 24px;
+    margin-right: calc(var(--spacing-unit) / 2);
+    border-radius: 50%; /* Make icons round */
+}
+
+.token-select-btn:hover {
+    background-color: var(--border-color); /* Keep background, maybe change text/icon color */
+    color: var(--accent-color); /* Change text/icon color on hover */
+    border-color: var(--accent-color); /* Change border color on hover */
+}
+
+
+.form-text {
+    display: block; /* Ensure balance is on a new line */
+    margin-top: calc(var(--spacing-unit) / 4);
+    color: var(--secondary-text-color) !important; /* Ensure muted text color */
+    font-size: 0.8em;
+}
+
+/* === Select Inputs (for networks) === */
+.form-select {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem;
+    padding: var(--spacing-unit);
+    font-size: 1.1em;
+    /* Customize arrow color if needed, more complex */
+}
+.form-select option {
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+
+/* === Buttons === */
+/* Overriding Bootstrap default button styles */
+.btn {
+    padding: var(--spacing-unit) calc(var(--spacing-unit) * 1.5);
+    border-radius: 0.5rem; /* Slightly more rounded */
+    font-size: 1.1em;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    border: none; /* Start with no border */
+}
+
+.btn-primary {
+    background: linear-gradient(90deg, var(--accent-color), var(--accent-color-dark)); /* Gradient background */
+    color: var(--text-color); /* Light text on gradient */
+}
+
+.btn-primary:hover {
+    background: linear-gradient(90deg, var(--accent-color-dark), var(--accent-color)); /* Reverse gradient or darker */
+    color: var(--text-color);
+    box-shadow: 0 2px 5px rgba(90, 103, 216, 0.5); /* Subtle shadow on hover */
+}
+
+.btn-primary:active {
+     background: var(--accent-color-dark);
+     box-shadow: none;
+}
+
+.btn-warning {
+    background-color: var(--warning-color);
+    color: #333; /* Dark text on yellow */
+}
+.btn-warning:hover {
+     background-color: #d6c04c; /* Manual darken */
+     opacity: 0.9; /* Simple hover effect */
+}
+
+.btn-success {
+    background-color: var(--success-color);
+    color: #fff;
+}
+.btn-success:hover {
+     background-color: #38a166; /* Manual darken */
+     opacity: 0.9;
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    color: #fff;
+}
+.btn-danger:hover {
+     background-color: #e53e3e; /* Manual darken */
+     opacity: 0.9;
+}
+
+
+.btn:disabled {
+    background-color: var(--border-color) !important; /* Darker disabled background */
+    color: var(--secondary-text-color) !important; /* Muted text */
+    cursor: not-allowed;
+    opacity: 0.7 !important;
+    box-shadow: none !important;
+}
+
+
+/* === Alerts / Status Messages === */
+.alert {
+    background-color: var(--border-color); /* Darker background for alerts */
+    color: var(--text-color);
+    border-color: var(--accent-color); /* Accent color border */
+    border-radius: 0.5rem;
+    padding: var(--spacing-unit);
+    font-size: 0.9em;
+}
+.alert-info {
+     background-color: rgba(90, 103, 216, 0.1); /* Light accent background */
+     color: var(--text-color);
+     border-color: var(--accent-color);
+}
+
+/* Specific status text below forms */
+#swap-status, #bridge-status, #telegram-message {
+    margin-top: var(--spacing-unit);
+    font-size: 0.9em;
+    color: var(--secondary-text-color);
+    min-height: 1.2em; /* Reserve space to prevent layout shifts */
+}
+#telegram-status.lead {
+     color: var(--text-color); /* Make lead status more prominent */
+}
+
+
+/* === Modals === */
+.modal-content {
+    background-color: var(--card-background); /* Card background for modal */
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-title {
+    color: var(--text-color);
+}
+
+.modal-body {
+    padding: var(--spacing-unit);
+}
+
+.modal-footer {
+    border-top: 1px solid var(--border-color);
+}
+
+.btn-close {
+    filter: invert(1); /* Make the close button visible on dark background */
+}
+
+#token-search {
+     margin-bottom: var(--spacing-unit);
+     background-color: var(--background-color);
+     color: var(--text-color);
+     border: 1px solid var(--border-color);
+}
+#token-search:focus {
+     border-color: var(--accent-color);
+     box-shadow: 0 0 0 0.25rem rgba(90, 103, 216, 0.25);
+}
+
+
+#token-list {
+    list-style: none;
+    padding: 0;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem;
+}
+
 #token-list li {
+    padding: calc(var(--spacing-unit) / 2) var(--spacing-unit);
+    border-bottom: 1px solid var(--border-color);
     cursor: pointer;
+    color: var(--text-color);
+    background-color: transparent; /* Default background */
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+#token-list li:last-child {
+    border-bottom: none;
 }
 
 #token-list li:hover {
-    background-color: #e9ecef; /* Цвет фона при наведении из Bootstrap */
+    background-color: var(--border-color); /* Highlight on hover */
 }
 
 #token-list li img {
     width: 20px;
     height: 20px;
-    vertical-align: middle;
-    margin-right: 10px;
+    margin-right: var(--spacing-unit);
+    border-radius: 50%;
 }
 
-/* Стиль для отображения баланса под полем ввода */
-.input-group + .form-text {
-    display: block; /* Убедиться, что small на новой строке */
-    margin-top: 0.25rem; /* Отступ сверху как у Bootstrap */
-}
-
-/* Скрываем элементы через Bootstrap класс */
-/* .hidden { display: none !important; } */
-
-/* Модалка статуса транзакции */
+/* Transaction Status Modal specific styles */
 #transaction-modal-hash {
-     word-break: break-all; /* Перенос длинных хэшей */
+     word-break: break-all; /* Break long transaction hashes */
+     font-size: 0.8em;
+     color: var(--secondary-text-color) !important;
 }
+#transaction-modal-explorer-link {
+     margin-top: var(--spacing-unit);
+}
+
+
+/* Telegram specific styles */
+#telegram-linking-info {
+    background-color: rgba(90, 103, 216, 0.1); /* Light accent background */
+    border: 1px dashed var(--accent-color); /* Dashed accent border */
+    padding: calc(1.5 * var(--spacing-unit));
+    border-radius: 0.5rem;
+    margin-top: calc(1.5 * var(--spacing-unit));
+}
+#telegram-linking-info p {
+    margin-bottom: calc(var(--spacing-unit) / 2);
+    color: var(--text-color);
+}
+#telegram-linking-info .alert-link {
+     color: var(--accent-color); /* Link color matches accent */
+     text-decoration: none;
+}
+#telegram-linking-info .alert-link:hover {
+     text-decoration: underline;
+}
+
+#telegram-linking-code {
+    font-size: 1.5em; /* Larger code font */
+    color: var(--accent-color); /* Accent color for the code */
+    font-weight: bold;
+    display: block; /* Code on its own line */
+    margin-bottom: var(--spacing-unit);
+}
+#telegram-linking-info small {
+     color: var(--secondary-text-color);
+}
+
+
+/* Helper class for hidden elements (if still using it, but Bootstrap's d-none is better) */
+/* .hidden { display: none !important; } */
