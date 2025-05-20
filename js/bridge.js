@@ -324,12 +324,44 @@ async function handleGetBridgeQuote() {
             currentBridgeQuote = null; return;
         }
         let toAmountFromApi;
-        if (quoteData.quote?.amountOut) toAmountFromApi = quoteData.quote.amountOut;
-        else if (quoteData.steps) { /* ...логика извлечения toAmount... */ }
+        let toTokenDecimalsFromApi;
 
-        if (!toAmountFromApi) { if(ui.elements.bridgeToAmount) ui.elements.bridgeToAmount.value = 'N/A'; }
-        else { if(ui.elements.bridgeToAmount) ui.elements.bridgeToAmount.value = utils.formatTokenAmount(toAmountFromApi, selectedToTokenBridge.decimals); }
+        // Ищем сумму получения в структуре ответа
+        if (quoteData.details && quoteData.details.currencyOut && quoteData.details.currencyOut.amount) {
+            toAmountFromApi = quoteData.details.currencyOut.amount; // Это строка с суммой в минимальных единицах
 
+            // Пытаемся получить децималы токена, который мы получим
+            if (quoteData.details.currencyOut.currency && typeof quoteData.details.currencyOut.currency.decimals === 'number') {
+                toTokenDecimalsFromApi = quoteData.details.currencyOut.currency.decimals;
+            } else {
+                // Если децималы не пришли в ответе API для currencyOut,
+                // используем децималы из нашего selectedToToken (должны совпадать)
+                toTokenDecimalsFromApi = selectedToToken.decimals;
+                console.warn("Relay API: Decimals for currencyOut not found directly in API response, using selectedToToken.decimals:", toTokenDecimalsFromApi);
+            }
+
+        } else if (quoteData.quote && quoteData.quote.amountOut) { // Старая проверка на всякий случай
+            toAmountFromApi = quoteData.quote.amountOut;
+            toTokenDecimalsFromApi = selectedToToken.decimals; // Предполагаем, что это для selectedToToken
+            console.warn("Relay API: Using quoteData.quote.amountOut (fallback).");
+        } else {
+            // Если не нашли ни там, ни там, возможно, нужно искать в последнем шаге `steps`
+            // Это более сложная логика, так как структура `steps` может быть разной.
+            // Пока оставим так, если `details.currencyOut.amount` - основной путь.
+            console.warn("Relay API: Could not determine 'toAmount' from primary paths (details.currencyOut.amount or quote.amountOut). Quote data:", quoteData);
+        }
+
+
+        if (!toAmountFromApi || typeof toTokenDecimalsFromApi !== 'number') {
+            console.error("Relay API: Failed to extract 'toAmountFromApi' or its 'decimals'. Cannot update UI.",
+                          "toAmountFromApi:", toAmountFromApi, "toTokenDecimalsFromApi:", toTokenDecimalsFromApi);
+            if(ui.elements.swapToAmount) ui.elements.swapToAmount.value = 'Ошибка данных'; // Или 'N/A'
+            // currentSwapQuote все равно сохраняем, так как шаги для транзакции могут быть валидны
+        } else {
+            if(ui.elements.swapToAmount) {
+                ui.elements.swapToAmount.value = utils.formatTokenAmount(toAmountFromApi, toTokenDecimalsFromApi);
+            }
+        }
         currentBridgeQuote = quoteData;
         const fromChainObj = wallet.getSupportedNetworks().find(n => n.chainId === selectedFromChainId);
         const toChainObj = wallet.getSupportedNetworks().find(n => n.chainId === selectedToChainId);
@@ -358,10 +390,6 @@ async function handleExecuteBridge() {
     if (currentWalletChainId !== selectedFromChainId) {
         const reqNetInfo = wallet.getSupportedNetworks().find(n=>n.chainId === selectedFromChainId);
         ui.updateBridgeStatus(`Для выполнения моста из сети "${reqNetInfo?.name}" переключите кошелек.`); return;
-    }
-    if (currentBridgeQuote.originChainId !== selectedFromChainId) {
-        ui.updateBridgeStatus(`Ошибка: Котировка для другой исходной сети. Получите новый путь.`);
-        currentBridgeQuote = null; if(ui.updateBridgeDetails) ui.updateBridgeDetails(null,null,null,null,null); if(ui.elements.executeBridgeBtn) ui.elements.executeBridgeBtn.classList.add('d-none'); return;
     }
 
     ui.updateBridgeStatus("Подготовка транзакции моста...");
