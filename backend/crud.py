@@ -50,41 +50,6 @@ def create_token(db: Session, token: schemas.TokenCreate):
      db.refresh(db_token)
      return db_token
 
-# Функция для заполнения БД начальными токенами (для курсовой)
-def populate_tokens(db: Session):
-    # Пример данных. В реальном проекте лучше загружать из файла или API.
-    BACKEND_STATIC_URL_PREFIX = "http://127.0.0.1:8001/static/images/"  # !!! УКАЖИТЕ ПРАВИЛЬНЫЙ АДРЕС И ПОРТ ВАШЕГО БЭКЕНДА !!!
-
-    initial_tokens_data = [
-        {"chain_id": 1, "address": "NATIVE", "symbol": "ETH", "name": "Ethereum", "decimals": 18,
-         "logo_uri": BACKEND_STATIC_URL_PREFIX + "eth.png"},
-        {"chain_id": 1, "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "symbol": "WETH",
-         "name": "Wrapped Ether", "decimals": 18, "logo_uri": BACKEND_STATIC_URL_PREFIX + "weth.png"},
-        {"chain_id": 1, "address": "0xdAC17f958D2ee523a2206206994597C13D831ec7", "symbol": "USDT", "name": "Tether USD",
-         "decimals": 6, "logo_uri": BACKEND_STATIC_URL_PREFIX + "usdt.png"},
-        {"chain_id": 137, "address": "NATIVE", "symbol": "MATIC", "name": "Polygon", "decimals": 18,
-         "logo_uri": BACKEND_STATIC_URL_PREFIX + "matic.svg"},
-        {"chain_id": 137, "address": "0x0b3F868E5BEc070DDe2Cc1Fb5f96bEfa269d9aa7", "symbol": "WMATIC",
-         "name": "Wrapped Matic", "decimals": 18, "logo_uri": BACKEND_STATIC_URL_PREFIX + "matic.png"},
-        {"chain_id": 137, "address": "0x2791Bca1f2de4661ED88A30C99A7a92CfEf0Df44", "symbol": "USDC", "name": "USD Coin",
-         "decimals": 6, "logo_uri": BACKEND_STATIC_URL_PREFIX + "usdc.png"},
-        # Добавьте другие токены и сети
-    ]
-
-    for token_data in initial_tokens_data:
-        # Проверяем, существует ли уже токен с таким chain_id и address
-        existing_token = db.query(models.Token).filter(
-             models.Token.chain_id == token_data['chain_id'],
-             models.Token.address == token_data['address']
-        ).first()
-        if not existing_token:
-            db_token = models.Token(**token_data)
-            db.add(db_token)
-            print(f"Added token: {token_data['symbol']} on chain {token_data['chain_id']}")
-    db.commit()
-    print("Token population complete.")
-
-
 # === CRUD для TelegramLink ===
 
 def get_telegram_link_by_wallet(db: Session, wallet_address: str):
@@ -164,3 +129,10 @@ def unlink_telegram(db: Session, wallet_address: str):
         db.commit()
         return True
     return False # Связь не найдена
+
+def get_networks(db: Session):
+    db_networks = db.query(models.NetworkConfig) \
+        .filter(models.NetworkConfig.is_supported_on_frontend == 1) \
+        .order_by(models.NetworkConfig.name) \
+        .all()
+    return db_networks

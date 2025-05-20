@@ -1,7 +1,6 @@
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from sqlalchemy.orm import Session
-import asyncio # Нужен, т.к. обработчики Telegram могут быть асинхронными
 from backend.config import settings
 from backend.telegram_bot import handlers # Импортируем хендлеры
 

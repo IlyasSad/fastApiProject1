@@ -6,11 +6,9 @@
     <title>Управление Криптоактивами Web3</title>
 
     <!-- Bootstrap CSS -->
-    <!-- Подключаем Bootstrap CSS из CDN. Убедитесь, что это последняя версия или нужная вам. -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
 
     <!-- Custom CSS -->
-    <!-- Ваш собственный CSS должен идти после Bootstrap CSS, чтобы переопределять стили. -->
     <link rel="stylesheet" href="css/style.css">
 
     <!-- Favicon (опционально) -->
@@ -23,230 +21,178 @@
         <div class="container">
             <h1 class="mb-0">Мое Web3 Приложение</h1>
             <div id="wallet-status" class="mt-2">
-                <!-- Кнопка подключения кошелька. Видна по умолчанию. -->
                 <button id="connect-wallet-btn" class="btn btn-light btn-sm">Подключить Кошелек</button>
-                <!-- Элементы для отображения адреса и сети. Скрыты по умолчанию Bootstrap классом d-none. -->
                 <span id="wallet-address" class="d-none"></span>
                 <span id="wallet-network" class="d-none"></span>
-                <!-- Кнопка отключения кошелька. Скрыта по умолчанию. -->
                 <button id="disconnect-wallet-btn" class="btn btn-light btn-sm d-none">Отключить</button>
             </div>
         </div>
     </header>
 
     <main class="container mt-4">
-        <!-- Навигационные вкладки Bootstrap -->
         <ul class="nav nav-tabs" id="myTab" role="tablist">
-            <!-- Вкладка "Свап" -->
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="swap-tab-button" data-bs-toggle="tab" data-bs-target="#swap-tab" type="button" role="tab" aria-controls="swap-tab" aria-selected="true">Свап</button>
             </li>
-            <!-- Вкладка "Мост" -->
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="bridge-tab-button" data-bs-toggle="tab" data-bs-target="#bridge-tab" type="button" role="tab" aria-controls="bridge-tab" aria-selected="false">Мост</button>
             </li>
-             <!-- Вкладка "Telegram Уведомления" -->
              <li class="nav-item" role="presentation">
                 <button class="nav-link" id="telegram-tab-button" data-bs-toggle="tab" data-bs-target="#telegram-tab" type="button" role="tab" aria-controls="telegram-tab" aria-selected="false">Telegram Уведомления</button>
             </li>
         </ul>
 
-        <!-- Содержимое вкладок Bootstrap -->
-        <!-- Классы p-3 border border-top-0 удалены, так как их переопределили в style.css -->
         <div class="tab-content" id="myTabContent">
             <!-- Swap Tab Content -->
-            <!-- Классы show active по умолчанию для первой активной вкладки -->
             <div class="tab-pane fade show active" id="swap-tab" role="tabpanel" aria-labelledby="swap-tab-button">
                 <h2>Свап Токенов</h2>
                 <div id="swap-form" class="form-section mt-3">
-                    <div class="mb-3">
-                        <label for="swap-from-amount" class="form-label">Отправить</label>
+                    <!-- Селектор Сети для Свапа -->
+                    <div class="form-card mb-3">
+                        <div class="form-label-row"><label for="swap-network-select" class="form-label">Сеть для Свапа</label></div>
+                        <select class="form-select" id="swap-network-select"></select>
+                    </div>
+
+                    <!-- Секция "Отправить" -->
+                    <div id="swap-from-section" class="form-card">
+                         <div class="form-label-row"><label for="swap-from-amount" class="form-label">Отправить</label></div>
                          <div class="input-group">
-                            <!-- Input для суммы отправки -->
-                            <input type="number" class="form-control" id="swap-from-amount" placeholder="Сумма" min="0">
-                            <!-- Кнопка выбора токена "Отправить". data-type="from" используется в JS для определения, какое поле обновлять. -->
+                            <input type="number" class="form-control" id="swap-from-amount" placeholder="0" min="0">
                             <button class="btn btn-outline-secondary token-select-btn" id="swap-from-token-btn" type="button" data-type="from">Выберите Токен</button>
                          </div>
-                         <!-- Отображение баланса выбранного токена "Отправить". Класс form-text для стилей Bootstrap. -->
                          <small id="swap-from-balance" class="form-text text-muted"></small>
                     </div>
-                    <div class="mb-3">
-                        <label for="swap-to-amount" class="form-label">Получить (приблизительно)</label>
+
+                    <!-- Кнопка СВАП (между секциями) -->
+                    <div class="swap-button-container">
+                        <button id="swap-direction-btn" class="btn btn-secondary btn-sm rounded-circle">
+                             <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="arrow-down" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="16" height="16"><path fill="currentColor" d="M169.4 470.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 370.8 224 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 306.7L54.6 265.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z"></path></svg>
+                         </button>
+                    </div>
+
+                    <!-- Секция "Получить" -->
+                    <div id="swap-to-section" class="form-card">
+                         <div class="form-label-row"><label for="swap-to-amount" class="form-label">Получить (приблизительно)</label></div>
                          <div class="input-group">
-                            <!-- Input для суммы получения. readonly, т.к. заполняется автоматически после получения курса. -->
-                            <input type="text" class="form-control" id="swap-to-amount" placeholder="Сумма" readonly>
-                             <!-- Кнопка выбора токена "Получить". data-type="to" используется в JS. -->
+                            <input type="text" class="form-control" id="swap-to-amount" placeholder="0" readonly>
                              <button class="btn btn-outline-secondary token-select-btn" id="swap-to-token-btn" type="button" data-type="to">Выберите Токен</button>
                          </div>
-                         <!-- Баланс токена получения обычно не отображается здесь, но span оставлен на всякий случай. -->
-                         <!-- <small id="swap-to-balance" class="form-text text-muted"></small> -->
                     </div>
-                     <!-- Блок для отображения деталей свапа (курс, проскальзывание и т.д.). Изначально скрыт. -->
+
+                     <!-- Блок для отображения деталей свапа -->
                      <div id="swap-details" class="alert alert-info mt-3 d-none">
-                         <!-- Детали свапа будут добавлены сюда JavaScript -->
                      </div>
-                    <!-- Кнопки действий. Изначально скрыты или включены/отключены JavaScript. -->
-                    <button id="get-swap-quote-btn" class="btn btn-primary mt-3">Получить курс</button>
-                    <!-- Кнопка апрува для свапа. LiFi SDK обрабатывает апрув автоматически, эта кнопка может быть удалена или ее логика изменена. -->
-                    <button id="approve-swap-btn" class="btn btn-warning mt-3 d-none">Разрешить Токен</button>
-                    <!-- Кнопка выполнения свапа. -->
-                    <button id="execute-swap-btn" class="btn btn-success mt-3 d-none">Выполнить Свап</button>
-                    <!-- Параграф для отображения статуса выполнения свапа. -->
+
+                    <!-- Кнопки действий -->
+                    <button id="get-swap-quote-btn" class="btn btn-primary w-100 mt-3">Получить курс</button>
+                    <button id="execute-swap-btn" class="btn btn-success w-100 mt-3 d-none">Выполнить Свап</button>
+
+                    <!-- Параграф для отображения статуса выполнения -->
                     <p id="swap-status" class="mt-3"></p>
                 </div>
             </div>
 
             <!-- Bridge Tab Content -->
-            <!-- Класс fade для анимации перехода между вкладками -->
             <div class="tab-pane fade" id="bridge-tab" role="tabpanel" aria-labelledby="bridge-tab-button">
                 <h2>Перевод через Мост</h2>
                  <div id="bridge-form" class="form-section mt-3">
-                     <div class="mb-3">
-                        <label for="bridge-from-network" class="form-label">Из Сети</label>
-                        <!-- Выпадающий список для выбора исходной сети. Заполняется JavaScript. -->
+                     <div id="bridge-from-network-section" class="form-card">
+                         <div class="form-label-row"><label for="bridge-from-network" class="form-label">Из Сети</label></div>
                         <select class="form-select" id="bridge-from-network"></select>
-                     </div>
-                      <div class="mb-3">
-                        <label for="bridge-to-network" class="form-label">В Сеть</label>
-                        <!-- Выпадающий список для выбора целевой сети. Заполняется JavaScript. -->
-                        <select class="form-select" id="bridge-to-network"></select>
-                     </div>
-                     <div class="mb-3">
-                        <label for="bridge-from-amount" class="form-label">Отправить</label>
+                         <div class="form-label-row mt-3"><label for="bridge-from-amount" class="form-label">Отправить</label></div>
                          <div class="input-group">
-                            <!-- Input для суммы отправки через мост. -->
-                            <input type="number" class="form-control" id="bridge-from-amount" placeholder="Сумма" min="0">
-                             <!-- Кнопка выбора токена "Отправить" для моста. -->
+                            <input type="number" class="form-control" id="bridge-from-amount" placeholder="0" min="0">
                              <button class="btn btn-outline-secondary token-select-btn" id="bridge-from-token-btn" type="button" data-type="from">Выберите Токен</button>
                          </div>
-                         <!-- Отображение баланса выбранного токена "Отправить" для моста. -->
                          <small id="bridge-from-balance" class="form-text text-muted"></small>
                      </div>
-                     <div class="mb-3">
-                        <label for="bridge-to-amount" class="form-label">Получить (приблизительно)</label>
+                    <div class="swap-button-container">
+                        <button id="bridge-direction-btn" class="btn btn-secondary btn-sm rounded-circle">
+                             <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="arrow-down" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="16" height="16"><path fill="currentColor" d="M169.4 470.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 370.8 224 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 306.7L54.6 265.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z"></path></svg>
+                         </button>
+                    </div>
+                     <div id="bridge-to-network-section" class="form-card">
+                         <div class="form-label-row"><label for="bridge-to-network" class="form-label">В Сеть</label></div>
+                        <select class="form-select" id="bridge-to-network"></select>
+                         <div class="form-label-row mt-3"><label for="bridge-to-amount" class="form-label">Получить (приблизительно)</label></div>
                          <div class="input-group">
-                             <!-- Input для суммы получения через мост. readonly. -->
-                            <input type="text" class="form-control" id="bridge-to-amount" placeholder="Сумма" readonly>
-                             <!-- Кнопка выбора токена "Получить" для моста. -->
+                            <input type="text" class="form-control" id="bridge-to-amount" placeholder="0" readonly>
                              <button class="btn btn-outline-secondary token-select-btn" id="bridge-to-token-btn" type="button" data-type="to">Выберите Токен</button>
                          </div>
                      </div>
-                      <!-- Блок для отображения деталей моста (комиссии, время и т.д.). Изначально скрыт. -->
                       <div id="bridge-details" class="alert alert-info mt-3 d-none">
-                         <!-- Детали моста будут добавлены сюда JavaScript -->
                      </div>
-                     <!-- Кнопки действий для моста. Изначально скрыты/отключены. -->
-                     <button id="get-bridge-quote-btn" class="btn btn-primary mt-3">Найти лучший путь</button>
-                     <!-- Кнопка апрува для моста. LiFi SDK обрабатывает апрув автоматически. -->
-                    <button id="approve-bridge-btn" class="btn btn-warning mt-3 d-none">Разрешить Токен</button>
-                    <!-- Кнопка выполнения моста. -->
-                    <button id="execute-bridge-btn" class="btn btn-success mt-3 d-none">Выполнить Мост</button>
-                     <!-- Параграф для отображения статуса выполнения моста. -->
+                     <button id="get-bridge-quote-btn" class="btn btn-primary w-100 mt-3">Найти лучший путь</button>
+                     <!-- <button id="approve-bridge-btn" class="btn btn-warning w-100 mt-3 d-none">Разрешить Токен</button> -->
+                    <button id="execute-bridge-btn" class="btn btn-success w-100 mt-3 d-none">Выполнить Мост</button>
                      <p id="bridge-status" class="mt-3"></p>
                  </div>
             </div>
 
              <!-- Telegram Tab Content -->
-             <!-- Класс fade для анимации -->
              <div class="tab-pane fade" id="telegram-tab" role="tabpanel" aria-labelledby="telegram-tab-button">
                  <h2>Telegram Уведомления</h2>
                  <div id="telegram-section" class="form-section mt-3">
-                     <!-- Параграф для отображения текущего статуса связывания. lead для выделения. -->
                      <p id="telegram-status" class="lead">Статус: Не подключен.</p>
-                     <!-- Кнопка для начала процесса связывания. -->
                      <button id="link-telegram-btn" class="btn btn-primary mt-3">Подключить Telegram</button>
-                     <!-- Блок с инструкцией и кодом связывания. Изначально скрыт. -->
                      <div id="telegram-linking-info" class="alert alert-info mt-3 d-none">
                          <p class="mb-1">Отправьте следующий код нашему боту <a href="#" id="telegram-bot-link" target="_blank" class="alert-link">@Ваш_Бот_Нейм</a> в Telegram:</p>
-                         <!-- Элемент для отображения сгенерированного кода. h4 и strong для выделения. -->
                          <p class="h4"><strong id="telegram-linking-code"></strong></p>
-                         <!-- Подсказка о времени обновления статуса. -->
                           <p class="mb-0"><small>После отправки кода статус обновится автоматически (может потребоваться некоторое время).</small></p>
                      </div>
-                     <!-- Кнопка для отмены связывания. Изначально скрыта. -->
                       <button id="unlink-telegram-btn" class="btn btn-danger mt-3 d-none">Отключить Telegram</button>
-                     <!-- Параграф для дополнительных сообщений или ошибок, связанных с Telegram. -->
                      <p id="telegram-message" class="mt-3"></p>
                  </div>
              </div>
-
         </div> <!-- /tab-content -->
-
     </main>
 
     <!-- Модальное окно для выбора токена (Bootstrap Modal) -->
-    <!-- Используется data-bs-backdrop="static" и data-bs-keyboard="false" если хотите запретить закрытие кликом вне и кнопкой Esc -->
     <div class="modal fade" id="token-picker-modal" tabindex="-1" aria-labelledby="tokenPickerModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="tokenPickerModalLabel">Выберите Токен</h5>
-                    <!-- Кнопка закрытия модалки Bootstrap -->
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                     <!-- Input для поиска токенов в списке модалки -->
                      <input type="text" class="form-control mb-3" id="token-search" placeholder="Поиск токена...">
-                    <!-- Список для токенов. Заполняется JavaScript. -->
                     <ul id="token-list" class="list-group">
-                        <!-- Список токенов будет загружаться сюда JS -->
                     </ul>
                 </div>
-                <!-- Футер модалки (опционально) -->
-                <!-- <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-                </div> -->
             </div>
         </div>
     </div>
 
     <!-- Модальное окно для статуса транзакции (Bootstrap Modal) -->
-    <!-- Используется для отображения хэша транзакции и ссылки на эксплорер. -->
     <div class="modal fade" id="transaction-status-modal" tabindex="-1" aria-labelledby="transactionStatusModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="transactionStatusModalLabel">Статус Транзакции</h5>
-                    <!-- Кнопка закрытия модалки Bootstrap -->
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <!-- Параграф для отображения статуса транзакции (Отправлено, Подтверждено, Ошибка). -->
                     <p id="transaction-modal-status" class="fw-bold"></p>
-                    <!-- Параграф для отображения хэша транзакции. text-muted small для менее акцентного вида. -->
                     <p id="transaction-modal-hash" class="text-muted small"></p>
-                    <!-- Ссылка на эксплорер для просмотра транзакции. Изначально скрыта. -->
                     <a href="#" id="transaction-modal-explorer-link" target="_blank" class="btn btn-secondary btn-sm d-none">Посмотреть в эксплорере</a>
                 </div>
             </div>
         </div>
     </div>
 
-
     <!-- === JavaScript Libraries === -->
-    <!-- Bootstrap Bundle with Popper. Обязательно ДО вашего JS, если ваш JS использует компоненты Bootstrap. -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
-
-    <!-- Web3 Library: Ethers.js -->
-    <!-- Подключаем Ethers.js из CDN. Убедитесь, что это последняя версия или нужная вам. -->
-    <!-- Обязательно ДО ваших JS файлов, которые используют 'ethers'. -->
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 
-    <!-- Li.Finance SDK (Relay.link uses this) -->
-    <!-- Подключаем LiFi SDK. Убедитесь, что это актуальный CDN или файл. -->
-    <!-- Должен быть после Ethers.js, если LiFi от него зависит. -->
-    <script src="https://unpkg.com/@lifi/sdk@1.7.0/dist/lifi.umd.min.js"></script>
-
-
     <!-- === Your Custom JavaScript Files === -->
-    <!-- Порядок важен из-за зависимостей! utils должен быть первым. -->
-    <script src="js/utils.js"></script>      <!-- Базовые хелперы, fetch, post, getTokenList -->
-    <script src="js/ui.js"></script>         <!-- Функции UI, зависят от utils и Bootstrap -->
-    <script src="js/wallet.js"></script>     <!-- Логика кошелька, зависит от ethers, ui, и вызывает swap/bridge/telegram методы -->
-    <script src="js/swap.js"></script>       <!-- Логика Свапа (зависят от utils, ui, wallet, LiFi) -->
-    <script src="js/bridge.js"></script>     <!-- Логика Моста (зависят от utils, ui, wallet, LiFi) -->
-    <script src="js/telegram.js"></script>   <!-- Логика Telegram (зависят от utils, ui, wallet) -->
-    <script src="js/app.js"></script>        <!-- Главный файл, инициализация, обработчики событий, зависит от всех остальных, подписывается на LiFi события -->
+    <script src="js/utils.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/wallet.js"></script>
+    <script src="js/swap.js"></script>
+    <script src="js/bridge.js"></script>
+    <script src="js/telegram.js"></script>
+    <script src="js/app.js"></script>
 
 </body>
 </html>

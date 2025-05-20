@@ -1,40 +1,35 @@
 // js/utils.js
 
 // URL вашего Python бэкенда
-const BACKEND_URL = 'http://127.0.0.1:8001'; // Убедитесь, что совпадает с портом, на котором работает FastAPI
+const BACKEND_URL = 'http://127.0.0.1:8001'; // Убедитесь, что совпадает с портом FastAPI
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+
 
 // --- Вспомогательные функции ---
 
-// Форматирование адреса (0x1234...abcd)
 function formatAddress(address) {
-    if (!address) return '';
-    if (typeof address !== 'string' || address.length < 10) return address;
+    if (!address || typeof address !== 'string' || address.length < 10) return address || '';
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
 }
 
-// Форматирование суммы токена с учетом десятичных знаков
 function formatTokenAmount(amount, decimals, fixed = 4) {
      if (amount === undefined || amount === null || decimals === undefined || decimals === null) {
         return 'N/A';
     }
     try {
         const isBigNumber = ethers.BigNumber.isBigNumber(amount);
-        const etherAmount = isBigNumber ? ethers.utils.formatUnits(amount, decimals) : String(amount);
-
+        // Если это не BigNumber, но строка или число, пытаемся его использовать
+        const amountToFormat = isBigNumber ? amount : ethers.BigNumber.from(String(amount));
+        const etherAmount = ethers.utils.formatUnits(amountToFormat, decimals);
         const floatAmount = parseFloat(etherAmount);
         if (isNaN(floatAmount)) return 'N/A';
-
-        // Ограничиваем число знаков после запятой, но избегаем обрезания значимых нулей в конце, если fixed большое
-        // Можно использовать более сложные форматеры, но для курсовой toFixed достаточно
         return floatAmount.toFixed(fixed);
-
     } catch (error) {
-        console.error("Error formatting amount:", error);
-        return 'Error';
+        // console.error("Error formatting amount:", error, "Amount:", amount, "Decimals:", decimals);
+        return String(amount); // Возвращаем как есть, если ошибка форматирования
     }
 }
 
-// Парсинг суммы из строки ввода в BigNumber с учетом десятичных знаков токена
 function parseTokenAmount(amountString, decimals) {
     if (amountString === undefined || amountString === null || amountString === '' || decimals === undefined || decimals === null) {
          return ethers.constants.Zero;
@@ -46,23 +41,22 @@ function parseTokenAmount(amountString, decimals) {
         return ethers.utils.parseUnits(String(amountString), decimals);
     } catch (error) {
         console.error("Error parsing amount:", error);
-        throw new Error("Некорректная сумма токена.");
+        throw new Error(`Некорректная сумма. Проверьте формат.`);
     }
 }
 
-// Отправка POST запроса на бэкенд
 async function postData(url, data) {
     try {
         const response = await fetch(url, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json', },
             body: JSON.stringify(data),
         });
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
-            throw new Error(`HTTP error! Status: ${response.status}, Detail: ${errorData.detail || response.statusText}`);
+            const errorData = await response.json().catch(() => ({ detail: 'Unknown error reading error response' }));
+            const errorMessage = errorData.detail || response.statusText || 'Unknown error';
+            console.error(`HTTP POST error to ${url}: Status ${response.status}, Detail: ${errorMessage}`);
+            throw new Error(`Ошибка сервера (${response.status}): ${errorMessage}`);
         }
         const text = await response.text();
         return text ? JSON.parse(text) : {};
@@ -72,13 +66,14 @@ async function postData(url, data) {
     }
 }
 
-// Получение данных GET запросом
 async function fetchData(url) {
     try {
         const response = await fetch(url);
          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
-            throw new Error(`HTTP error! Status: ${response.status}, Detail: ${errorData.detail || response.statusText}`);
+            const errorData = await response.json().catch(() => ({ detail: 'Unknown error reading error response' }));
+             const errorMessage = errorData.detail || response.statusText || 'Unknown error';
+             console.error(`HTTP GET error to ${url}: Status ${response.status}, Detail: ${errorMessage}`);
+            throw new Error(`Ошибка сервера (${response.status}): ${errorMessage}`);
         }
         const text = await response.text();
         return text ? JSON.parse(text) : {};
@@ -88,20 +83,24 @@ async function fetchData(url) {
     }
 }
 
-// Получение списка токенов с вашего бэкенда FastAPI
 async function getTokenList(chainId) {
     if (!chainId) {
-        console.error("Cannot fetch token list: chainId is null.");
+        console.error("Cannot fetch token list: chainId is null or undefined.");
         return [];
     }
-    console.log("Fetching token list from backend for chainId:", chainId);
+    console.log(`Fetching token list from backend for chainId: ${chainId}...`);
     try {
         const url = `${BACKEND_URL}/api/tokens/${chainId}`;
         const tokens = await fetchData(url);
         console.log(`Received ${tokens.length} tokens for chain ${chainId} from backend.`);
         return tokens.map(token => ({
             ...token,
-            logo_uri: token.logo_uri || 'https://via.placeholder.com/20/007bff/fff?text=' + (token.symbol ? token.symbol[0] : 'T')
+            address: token.address === '0x0000000000000000000000000000000000000000' ? 'NATIVE' : token.address, // Для внутреннего использования 'NATIVE' удобнее
+            logo_uri: token.logo_uri && typeof token.logo_uri === 'string' && token.logo_uri.startsWith('http')
+                      ? token.logo_uri
+                      : (token.logo_uri && typeof token.logo_uri === 'string' && token.logo_uri.startsWith('/static/'))
+                          ? `${BACKEND_URL}${token.logo_uri}`
+                          : `https://via.placeholder.com/24/007bff/fff?text=${token.symbol ? token.symbol[0].toUpperCase() : '?'}`
         }));
     } catch (error) {
         console.error(`Error fetching token list for chain ${chainId} from backend:`, error);
@@ -109,24 +108,17 @@ async function getTokenList(chainId) {
     }
 }
 
-
-// Получение баланса токена или нативной валюты
 async function getTokenBalance(tokenAddress, walletAddress, provider, decimals) {
     if (!walletAddress || !provider) return ethers.constants.Zero;
-
     try {
-        if (tokenAddress.toLowerCase() === 'native') { // Проверяем без учета регистра
+        if (tokenAddress.toUpperCase() === 'NATIVE' || tokenAddress === ZERO_ADDRESS) {
             return await provider.getBalance(walletAddress);
         } else {
-             try {
-                 ethers.utils.getAddress(tokenAddress); // Валидация адреса
-             } catch (e) {
-                 console.error(`Invalid token address format: ${tokenAddress}`, e);
+             try { ethers.utils.getAddress(tokenAddress); } catch (e) {
+                 console.error(`Invalid token address format for balance check: ${tokenAddress}`, e);
                  return ethers.constants.Zero;
              }
-            const erc20Abi = [
-                "function balanceOf(address account) view returns (uint256)"
-            ];
+            const erc20Abi = ["function balanceOf(address account) view returns (uint256)"];
             const tokenContract = new ethers.Contract(tokenAddress, erc20Abi, provider);
             return await tokenContract.balanceOf(walletAddress);
         }
@@ -136,9 +128,9 @@ async function getTokenBalance(tokenAddress, walletAddress, provider, decimals) 
     }
 }
 
-// Проверка разрешения (allowance) для ERC-20 токена
+// Эти функции могут быть менее востребованы, т.к. approve будет частью executeSwap/Bridge
 async function getTokenAllowance(tokenAddress, ownerAddress, spenderAddress, provider) {
-    if (tokenAddress.toLowerCase() === 'native' || !ownerAddress || !spenderAddress || !provider) {
+    if (tokenAddress.toUpperCase() === 'NATIVE' || tokenAddress === ZERO_ADDRESS || !ownerAddress || !spenderAddress || !provider) {
         return ethers.constants.MaxUint256;
     }
      try {
@@ -149,22 +141,18 @@ async function getTokenAllowance(tokenAddress, ownerAddress, spenderAddress, pro
           console.error(`Invalid address format for allowance check: ${e.message}`);
           return ethers.constants.Zero;
      }
-
     try {
-        const erc20Abi = [
-            "function allowance(address owner, address spender) view returns (uint256)"
-        ];
+        const erc20Abi = ["function allowance(address owner, address spender) view returns (uint256)"];
         const tokenContract = new ethers.Contract(tokenAddress, erc20Abi, provider);
         return await tokenContract.allowance(ownerAddress, spenderAddress);
     } catch (error) {
-         console.error(`Error fetching allowance for ${tokenAddress} from ${ownerAddress} to ${spenderAddress}:`, error);
+         console.error(`Error fetching allowance for ${tokenAddress}:`, error);
          return ethers.constants.Zero;
     }
 }
 
-// Запрос разрешения (approve) для ERC-20 токена
 async function approveToken(tokenAddress, spenderAddress, amount, signer) {
-    if (tokenAddress.toLowerCase() === 'native' || !signer) {
+    if (tokenAddress.toUpperCase() === 'NATIVE' || tokenAddress === ZERO_ADDRESS || !signer) {
         throw new Error("Cannot approve native currency or signer not available.");
     }
      try {
@@ -174,56 +162,30 @@ async function approveToken(tokenAddress, spenderAddress, amount, signer) {
           console.error(`Invalid address format for approve: ${e.message}`);
           throw new Error(`Некорректный адрес: ${e.message}`);
      }
-      if (!ethers.BigNumber.isBigNumber(amount)) {
+     if (!ethers.BigNumber.isBigNumber(amount)) {
           console.error("Approve amount is not BigNumber:", amount);
           throw new Error("Внутренняя ошибка: некорректная сумма для апрува.");
      }
-
     try {
-        const erc20Abi = [
-            "function approve(address spender, uint256 amount) returns (bool)"
-        ];
+        const erc20Abi = ["function approve(address spender, uint256 amount) returns (bool)"];
         const tokenContract = new ethers.Contract(tokenAddress, erc20Abi, signer);
-
-        // Определяем explorerUrl для текущей сети signer'а
-        const chainId = await signer.getChainId();
-        const explorerUrl = wallet.getExplorerUrl(chainId); // Используем wallet.getExplorerUrl
-
         const tx = await tokenContract.approve(spenderAddress, amount);
-
-        ui.showTransactionStatusModal("Ожидание подтверждения разрешения...", tx.hash, explorerUrl ? explorerUrl + tx.hash : null);
-
-        console.log("Approval transaction sent:", tx.hash);
-
+        const currentChainId = await signer.getChainId();
+        ui.showTransactionStatusModal("Ожидание подтверждения разрешения...", tx.hash, wallet.getExplorerUrl(currentChainId) + tx.hash);
         const receipt = await tx.wait();
-        console.log("Approval transaction confirmed:", receipt);
-
-         ui.showTransactionStatusModal("Разрешение подтверждено!", receipt.transactionHash, explorerUrl ? explorerUrl + receipt.transactionHash : null);
-
+        ui.showTransactionStatusModal("Разрешение подтверждено!", receipt.transactionHash, wallet.getExplorerUrl(currentChainId) + receipt.transactionHash);
         return receipt;
     } catch (error) {
         console.error(`Error approving token ${tokenAddress}:`, error);
          let errorMessage = "Неизвестная ошибка при разрешении токена.";
-         if (error.code === 4001) {
-             errorMessage = "Транзакция отклонена пользователем.";
-         } else if (error.message) {
-             errorMessage = `Ошибка: ${error.message.substring(0, 100)}...`;
-         }
-         const chainId = signer ? await signer.getChainId().catch(() => null) : null;
-         const explorerUrl = chainId ? wallet.getExplorerUrl(chainId) : null;
-
-
-         ui.showTransactionStatusModal(errorMessage, error.transactionHash, error.transactionHash && explorerUrl ? explorerUrl + error.transactionHash : null);
-
-         if (error.code === 4001) {
-              setTimeout(() => ui.hideTransactionStatusModal(), 5000);
-         }
-
+         if (error.code === 4001) errorMessage = "Транзакция отклонена пользователем.";
+         else if (error.message) errorMessage = `Ошибка: ${error.message.substring(0, 100)}...`;
+         ui.showTransactionStatusModal(errorMessage, error.transactionHash, error.transactionHash ? wallet.getExplorerUrl(error.chain?.id || wallet.getChainId()) + error.transactionHash : null);
+         if (error.code === 4001) setTimeout(() => ui.hideTransactionStatusModal(), 5000);
         throw error;
     }
 }
 
-// Экспорт функций
 window.utils = {
     formatAddress,
     formatTokenAmount,
@@ -235,4 +197,5 @@ window.utils = {
     getTokenAllowance,
     approveToken,
     BACKEND_URL,
+    ZERO_ADDRESS,
 };

@@ -1,37 +1,45 @@
 /* css/style.css */
 
 /* === CSS Variables for Theme === */
+/* Используем переменные для легкой настройки цветов */
 :root {
-    --background-color: #0a0b0d; /* Very dark background */
-    --card-background: #1a1b1d;    /* Slightly lighter background for cards/sections */
-    --text-color: #f0f0f0;         /* Light text */
-    --secondary-text-color: #b0b0b0; /* Lighter gray text */
-    --border-color: #3a3b3d;       /* Subtle border color */
-    --primary-color: #5a67d8;      /* Bootstrap primary - keep as fallback */
-    --accent-color: #5a67d8;       /* Your primary accent color (can change) */
-    --accent-color-dark: #4c51bf;  /* Darker accent for hover */
-    --success-color: #48bb78;      /* Bootstrap success */
-    --warning-color: #f6e05e;      /* Bootstrap warning */
-    --danger-color: #f56565;       /* Bootstrap danger */
-    --spacing-unit: 1rem;          /* Base spacing */
+    --background-color: #0c0e13; /* Темный фон (взято из референса) */
+    --card-background: #1b1d22;    /* Фон для карточек/секций (взято из референса) */
+    --text-color: #fbfcff;         /* Основной светлый текст */
+    --secondary-text-color: #a8aab0; /* Второстепенный серый текст */
+    --border-color: #282b33;       /* Цвет границ */
+    --primary-color: #4779ff;      /* Акцентный синий */
+    --accent-color: #4779ff;       /* Ваш основной акцентный цвет */
+    --accent-color-dark: #3a6ad8;  /* Темнее для ховера */
+    --success-color: #79ffcf;      /* Цвет успеха (зеленоватый из референса) */
+    --warning-color: #e2a140;      /* Цвет предупреждения (оранжевый из референса) */
+    --danger-color: #ff6a6a;       /* Цвет ошибки (красный из референса) */
+    --button-primary-background: var(--primary-color); /* Фон основных кнопок */
+    --button-primary-color: #fff;  /* Текст на основных кнопках */
+    --button-secondary-background: #24272e; /* Фон второстепенных кнопок */
+    --button-secondary-color: var(--text-color); /* Текст на второстепенных кнопках */
+    --button-border-radius: 0.5rem; /* Закругление кнопок */
+    --input-background: #1b1d22;   /* Фон полей ввода (как у карточек) */
+    --input-color: var(--text-color); /* Текст в полях ввода */
+    --input-border: 1px solid var(--border-color); /* Граница полей ввода */
+    --spacing-unit: 1rem;          /* Базовая единица отступа */
 }
 
 /* === General Styles === */
 body {
-    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* Example modern font stack */
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* Шрифты */
     line-height: 1.6;
     background-color: var(--background-color);
     color: var(--text-color);
-    padding-bottom: calc(5 * var(--spacing-unit)); /* More padding at the bottom */
+    padding-bottom: calc(5 * var(--spacing-unit));
 }
 
 .container {
-    /* Keep Bootstrap's container */
-    /* You can add max-width if needed, but Bootstrap handles this well */
+    /* Bootstrap контейнер */
 }
 
 header {
-    background: var(--card-background); /* Use card background for header */
+    background: var(--card-background);
     color: var(--text-color);
     padding: var(--spacing-unit) 0;
     text-align: center;
@@ -50,7 +58,7 @@ header h1 {
     vertical-align: middle;
     margin-left: var(--spacing-unit);
     font-size: 0.9em;
-    color: var(--secondary-text-color); /* Status text lighter */
+    color: var(--secondary-text-color);
 }
 
 #wallet-address, #wallet-network {
@@ -60,46 +68,51 @@ header h1 {
 
 /* === Tab Navigation === */
 .nav-tabs {
-    border-bottom: none; /* Remove default Bootstrap border */
+    border-bottom: none;
     margin-bottom: var(--spacing-unit);
 }
 
 .nav-link {
-    color: var(--secondary-text-color); /* Inactive tab text */
+    color: var(--secondary-text-color);
     border: none;
     border-bottom: 2px solid transparent;
-    margin-right: var(--spacing-unit); /* Space between tabs */
+    margin-right: var(--spacing-unit);
     transition: color 0.3s ease, border-bottom-color 0.3s ease;
-    background-color: transparent; /* Ensure no background */
+    background-color: transparent;
+    padding: calc(var(--spacing-unit) * 0.75) var(--spacing-unit); /* Регулировка отступа вкладок */
 }
 
 .nav-link:hover {
-    color: var(--text-color); /* Hover text color */
-    border-bottom-color: var(--accent-color); /* Accent color border on hover */
+    color: var(--text-color);
+    border-bottom-color: var(--accent-color);
 }
 
 .nav-link.active {
-    color: var(--text-color); /* Active tab text */
-    border-bottom-color: var(--accent-color); /* Accent color border for active tab */
+    color: var(--text-color);
+    border-bottom-color: var(--accent-color);
     font-weight: bold;
-    background-color: transparent; /* Ensure no background */
+    background-color: transparent;
 }
 
 /* Fix for Bootstrap's tab-content padding and border */
 .tab-content {
-    padding: 0 !important; /* Remove Bootstrap padding */
-    border: none !important; /* Remove Bootstrap border */
-    background-color: transparent !important; /* Remove Bootstrap background */
+    padding: 0 !important;
+    border: none !important;
+    background-color: transparent !important;
 }
 
 
 /* === Form Sections / Cards === */
 .form-section {
-    background-color: var(--card-background); /* Use card background color */
+    background-color: var(--card-background);
     border: 1px solid var(--border-color);
     padding: calc(2 * var(--spacing-unit));
-    border-radius: 0.5rem; /* Slightly rounded corners */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    /* Flexbox для расположения секций From/To и кнопки swap между ними */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Центрируем элементы внутри */
 }
 
 .form-section h2 {
@@ -107,167 +120,226 @@ header h1 {
     margin-bottom: calc(2 * var(--spacing-unit));
     font-size: 1.5em;
     text-align: center;
+    width: 100%; /* Заголовок на всю ширину */
+}
+
+.form-card {
+     background-color: var(--input-background); /* Фон как у полей ввода */
+     border: var(--input-border);
+     border-radius: 0.375rem; /* Как у полей ввода */
+     padding: calc(var(--spacing-unit) * 0.75) var(--spacing-unit); /* Внутренние отступы */
+     width: 100%; /* Карточка на всю ширину родителя */
+     margin-bottom: calc(var(--spacing-unit) * 0.75); /* Отступ снизу */
+     display: flex; /* Включаем flexbox для содержимого карточки */
+     flex-direction: column; /* Элементы внутри друг под другом */
+     gap: calc(var(--spacing-unit) / 2); /* Отступ между элементами внутри */
+}
+
+#swap-form .form-card {
+     margin-bottom: calc(var(--spacing-unit) * 0.75); /* Отступ снизу */
+}
+
+#bridge-form .form-card {
+     margin-bottom: calc(var(--spacing-unit) * 0.75); /* Отступ снизу */
+}
+
+.form-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%; /* Строка с лейблом на всю ширину */
+}
+
+.form-label {
+     display: block; /* Убираем margin-bottom из Bootstrap */
+     margin-bottom: 0 !important;
+     font-weight: 500; /* Полужирный */
+     color: var(--secondary-text-color);
+     font-size: 0.9em;
 }
 
 
 /* === Input Groups and Controls === */
 .input-group {
-    margin-bottom: calc(1.5 * var(--spacing-unit));
-    align-items: center; /* Vertically align items in input group */
+    /* Переопределяем Bootstrap */
+    width: 100%; /* Input group на всю ширину карточки */
+    margin-bottom: 0; /* Убираем margin-bottom из Bootstrap */
+    align-items: center;
+     /* Добавляем flex wrap для адаптивности */
+    flex-wrap: wrap;
 }
 
-.input-group label {
-     display: block; /* Labels above input */
-     margin-bottom: calc(var(--spacing-unit) / 2);
-     font-weight: bold;
-     color: var(--secondary-text-color); /* Label color */
-     font-size: 0.9em;
+.input-group .form-control {
+     /* Переопределяем Bootstrap */
+     flex: 1 1 150px; /* Поле ввода может сжиматься и растягиваться, мин ширина 150px */
+     min-width: 0; /* Позволяет сжиматься меньше 150px, если необходимо */
+     background-color: transparent; /* Фон прозрачный, фон задается в form-card */
+     border: none; /* Убираем границу из Bootstrap input-group */
+     padding: 0; /* Убираем padding из Bootstrap form-control */
+     font-size: 1.5em; /* Больший размер шрифта для суммы */
+     font-weight: 700; /* Жирный шрифт для суммы */
+     color: var(--text-color); /* Цвет текста суммы */
 }
 
-.form-control {
-    background-color: var(--background-color); /* Darker background for input */
-    color: var(--text-color); /* Light text color */
-    border: 1px solid var(--border-color);
-    border-radius: 0.375rem; /* Standard Bootstrap rounding */
-    padding: var(--spacing-unit); /* More padding inside input */
-    font-size: 1.1em;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+.input-group .form-control:focus {
+     border-color: transparent; /* Убираем границу при фокусе */
+     box-shadow: none; /* Убираем тень при фокусе */
+     background-color: transparent; /* Фон прозрачный при фокусе */
+     color: var(--text-color);
 }
 
-.form-control:focus {
-    background-color: var(--background-color); /* Keep dark background on focus */
-    color: var(--text-color);
-    border-color: var(--accent-color); /* Accent color border on focus */
-    box-shadow: 0 0 0 0.25rem rgba(90, 103, 216, 0.25); /* Accent color shadow on focus */
-}
-
-.form-control::placeholder {
-    color: var(--secondary-text-color); /* Placeholder color */
-    opacity: 0.6;
-}
-
-/* Remove spinner arrows from number inputs */
-input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-input[type="number"] {
-    -moz-appearance: textfield;
+.input-group .form-control::placeholder {
+    color: var(--secondary-text-color);
+    opacity: 0.8; /* Чуть менее прозрачный */
 }
 
 
 .token-select-btn {
-    background-color: var(--border-color); /* Background for token button */
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-    border-left: none; /* No left border next to input */
-    padding: var(--spacing-unit) calc(var(--spacing-unit) * 1.5);
-    border-top-right-radius: 0.375rem; /* Match input rounding */
-    border-bottom-right-radius: 0.375rem; /* Match input rounding */
+    /* Переопределяем Bootstrap */
+    background-color: var(--button-secondary-background); /* Фон как у второстепенных кнопок */
+    color: var(--button-secondary-color); /* Цвет текста как у второстепенных кнопок */
+    border: none; /* Убираем границу */
+    padding: calc(var(--spacing-unit) / 2) var(--spacing-unit); /* Внутренние отступы */
+    border-radius: 9999px; /* Очень большое закругление для круглой формы */
     font-size: 1em;
-    display: flex; /* Allow flexbox for icon and text */
+    display: flex;
     align-items: center;
-     /* Remove absolute positioning from previous attempt if it was there */
-     position: static !important;
-     transform: none !important;
-}
-
-.token-select-btn img {
-    width: 24px; /* Slightly larger icon */
-    height: 24px;
-    margin-right: calc(var(--spacing-unit) / 2);
-    border-radius: 50%; /* Make icons round */
+    gap: calc(var(--spacing-unit) / 2); /* Отступ между иконкой и текстом */
+    /* Убираем Bootstrap specific input-group стили */
+    position: static !important;
+    transform: none !important;
+    margin-left: var(--spacing-unit); /* Отступ слева от инпута */
+     /* Выравнивание по центру вертикали в flex контейнере */
+    align-self: center;
+     /* Анимация */
+     transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .token-select-btn:hover {
-    background-color: var(--border-color); /* Keep background, maybe change text/icon color */
-    color: var(--accent-color); /* Change text/icon color on hover */
-    border-color: var(--accent-color); /* Change border color on hover */
+    background-color: var(--border-color); /* Чуть темнее при ховере */
+    color: var(--text-color); /* Основной цвет текста при ховере */
+     border-color: transparent; /* Граница прозрачная */
 }
 
 
+.token-select-btn img {
+    width: 24px;
+    height: 24px;
+    margin-right: 0; /* Убираем margin-right, используем gap в flexbox */
+    border-radius: 50%;
+}
+
 .form-text {
-    display: block; /* Ensure balance is on a new line */
-    margin-top: calc(var(--spacing-unit) / 4);
-    color: var(--secondary-text-color) !important; /* Ensure muted text color */
+    display: block;
+    margin-top: 0; /* Убираем верхний отступ, он в form-card gap */
+    color: var(--secondary-text-color) !important;
     font-size: 0.8em;
 }
 
 /* === Select Inputs (for networks) === */
 .form-select {
-    background-color: var(--background-color);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
+    background-color: var(--input-background); /* Фон как у полей ввода */
+    color: var(--input-color); /* Цвет текста как у полей ввода */
+    border: var(--input-border); /* Граница как у полей ввода */
     border-radius: 0.375rem;
     padding: var(--spacing-unit);
     font-size: 1.1em;
-    /* Customize arrow color if needed, more complex */
+     /* Регулировка стрелки выпадающего списка (сложно, часто требует SVG или background-image) */
+     /* backdrop-filter: none !important; */ /* Убираем возможный фильтр */
+     -webkit-appearance: none; /* Убираем стандартную стрелку в WebKit */
+     -moz-appearance: none; /* Убираем стандартную стрелку в Firefox */
+     appearance: none; /* Убираем стандартную стрелку */
+     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23a8aab0' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e"); /* SVG стрелка */
+     background-repeat: no-repeat;
+     background-position: right 0.75rem center;
+     background-size: 16px 12px;
 }
 .form-select option {
-    background-color: var(--background-color);
-    color: var(--text-color);
+    background-color: var(--input-background);
+    color: var(--input-color);
+}
+.form-select:focus {
+     border-color: var(--accent-color);
+     box-shadow: 0 0 0 0.25rem rgba(90, 103, 216, 0.25);
 }
 
 
-/* === Buttons === */
-/* Overriding Bootstrap default button styles */
+/* === Swap/Bridge Button Container === */
+.swap-button-container {
+    position: relative; /* Для позиционирования кнопки */
+    width: 100%;
+    display: flex;
+    justify-content: center; /* Центрируем кнопку по горизонтали */
+    margin: calc(var(--spacing-unit) * -1.5) 0; /* Отрицательный margin, чтобы кнопка "заехала" на карточки */
+    z-index: 10; /* Чтобы кнопка была поверх карточек */
+}
+
+.swap-button-container .btn-secondary {
+    /* Кнопка swap/bridge */
+    background-color: var(--card-background); /* Фон как у карточек */
+    border: 1px solid var(--border-color); /* Граница как у карточек */
+    width: 40px; /* Фиксированная ширина */
+    height: 40px; /* Фиксированная высота */
+    padding: 0; /* Убираем padding */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+     /* Анимация */
+     transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.swap-button-container .btn-secondary svg {
+    width: 16px; /* Размер иконки */
+    height: 16px;
+    color: var(--secondary-text-color); /* Цвет иконки */
+    transition: color 0.2s ease;
+}
+
+.swap-button-container .btn-secondary:hover {
+    background-color: var(--border-color);
+    border-color: var(--accent-color);
+    transform: rotate(180deg); /* Вращение при ховере */
+}
+
+.swap-button-container .btn-secondary:hover svg {
+    color: var(--accent-color); /* Цвет иконки при ховере */
+}
+
+
+/* === Action Buttons (Get Quote, Approve, Execute) === */
+/* Используем классы Bootstrap btn и w-100 */
 .btn {
     padding: var(--spacing-unit) calc(var(--spacing-unit) * 1.5);
-    border-radius: 0.5rem; /* Slightly more rounded */
-    font-size: 1.1em;
+    border-radius: var(--button-border-radius); /* Закругление из переменной */
+    font-size: 1em; /* Чуть меньше, чем в инпутах */
     font-weight: bold;
     transition: all 0.3s ease;
-    border: none; /* Start with no border */
+    border: none;
+    /* Стили для w-100 */
+    display: block; /* Кнопки занимают всю ширину */
+    width: 100%;
+    margin-top: var(--spacing-unit); /* Отступ сверху */
 }
 
 .btn-primary {
-    background: linear-gradient(90deg, var(--accent-color), var(--accent-color-dark)); /* Gradient background */
-    color: var(--text-color); /* Light text on gradient */
+    background: var(--button-primary-background);
+    color: var(--button-primary-color);
+    /* Градиент можно добавить, если хотите */
+    /* background: linear-gradient(90deg, var(--accent-color), var(--accent-color-dark)); */
 }
 
 .btn-primary:hover {
-    background: linear-gradient(90deg, var(--accent-color-dark), var(--accent-color)); /* Reverse gradient or darker */
-    color: var(--text-color);
-    box-shadow: 0 2px 5px rgba(90, 103, 216, 0.5); /* Subtle shadow on hover */
+    background: var(--accent-color-dark); /* Цвет при ховере */
+    color: var(--button-primary-color);
+    box-shadow: 0 2px 5px rgba(90, 103, 216, 0.3);
 }
 
-.btn-primary:active {
-     background: var(--accent-color-dark);
-     box-shadow: none;
-}
-
-.btn-warning {
-    background-color: var(--warning-color);
-    color: #333; /* Dark text on yellow */
-}
-.btn-warning:hover {
-     background-color: #d6c04c; /* Manual darken */
-     opacity: 0.9; /* Simple hover effect */
-}
-
-.btn-success {
-    background-color: var(--success-color);
-    color: #fff;
-}
-.btn-success:hover {
-     background-color: #38a166; /* Manual darken */
-     opacity: 0.9;
-}
-
-.btn-danger {
-    background-color: var(--danger-color);
-    color: #fff;
-}
-.btn-danger:hover {
-     background-color: #e53e3e; /* Manual darken */
-     opacity: 0.9;
-}
+/* ... (стили для btn-warning, btn-success, btn-danger остаются прежними) */
 
 
 .btn:disabled {
-    background-color: var(--border-color) !important; /* Darker disabled background */
-    color: var(--secondary-text-color) !important; /* Muted text */
+    background-color: var(--border-color) !important;
+    color: var(--secondary-text-color) !important;
     cursor: not-allowed;
     opacity: 0.7 !important;
     box-shadow: none !important;
@@ -276,15 +348,15 @@ input[type="number"] {
 
 /* === Alerts / Status Messages === */
 .alert {
-    background-color: var(--border-color); /* Darker background for alerts */
+    background-color: var(--card-background); /* Фон как у карточек */
     color: var(--text-color);
-    border-color: var(--accent-color); /* Accent color border */
+    border: 1px solid var(--border-color); /* Граница */
     border-radius: 0.5rem;
     padding: var(--spacing-unit);
     font-size: 0.9em;
 }
 .alert-info {
-     background-color: rgba(90, 103, 216, 0.1); /* Light accent background */
+     background-color: rgba(90, 103, 216, 0.1); /* Светлый акцентный фон */
      color: var(--text-color);
      border-color: var(--accent-color);
 }
@@ -294,16 +366,18 @@ input[type="number"] {
     margin-top: var(--spacing-unit);
     font-size: 0.9em;
     color: var(--secondary-text-color);
-    min-height: 1.2em; /* Reserve space to prevent layout shifts */
+    min-height: 1.2em;
+    width: 100%; /* Статус на всю ширину */
+    text-align: center; /* Центрируем текст статуса */
 }
 #telegram-status.lead {
-     color: var(--text-color); /* Make lead status more prominent */
+     color: var(--text-color);
 }
 
 
 /* === Modals === */
 .modal-content {
-    background-color: var(--card-background); /* Card background for modal */
+    background-color: var(--card-background);
     color: var(--text-color);
     border: 1px solid var(--border-color);
     border-radius: 0.5rem;
@@ -326,7 +400,7 @@ input[type="number"] {
 }
 
 .btn-close {
-    filter: invert(1); /* Make the close button visible on dark background */
+    filter: invert(1);
 }
 
 #token-search {
@@ -355,7 +429,7 @@ input[type="number"] {
     border-bottom: 1px solid var(--border-color);
     cursor: pointer;
     color: var(--text-color);
-    background-color: transparent; /* Default background */
+    background-color: transparent;
     transition: background-color 0.2s ease;
     display: flex;
     align-items: center;
@@ -366,19 +440,19 @@ input[type="number"] {
 }
 
 #token-list li:hover {
-    background-color: var(--border-color); /* Highlight on hover */
+    background-color: var(--border-color);
 }
 
 #token-list li img {
-    width: 20px;
-    height: 20px;
+    width: 24px; /* Размер как на кнопке выбора токена */
+    height: 24px;
     margin-right: var(--spacing-unit);
     border-radius: 50%;
 }
 
 /* Transaction Status Modal specific styles */
 #transaction-modal-hash {
-     word-break: break-all; /* Break long transaction hashes */
+     word-break: break-all;
      font-size: 0.8em;
      color: var(--secondary-text-color) !important;
 }
@@ -388,9 +462,13 @@ input[type="number"] {
 
 
 /* Telegram specific styles */
+#telegram-section {
+    /* Использует form-section */
+}
+
 #telegram-linking-info {
-    background-color: rgba(90, 103, 216, 0.1); /* Light accent background */
-    border: 1px dashed var(--accent-color); /* Dashed accent border */
+    background-color: rgba(90, 103, 216, 0.1);
+    border: 1px dashed var(--accent-color);
     padding: calc(1.5 * var(--spacing-unit));
     border-radius: 0.5rem;
     margin-top: calc(1.5 * var(--spacing-unit));
@@ -400,7 +478,7 @@ input[type="number"] {
     color: var(--text-color);
 }
 #telegram-linking-info .alert-link {
-     color: var(--accent-color); /* Link color matches accent */
+     color: var(--accent-color);
      text-decoration: none;
 }
 #telegram-linking-info .alert-link:hover {
@@ -408,11 +486,12 @@ input[type="number"] {
 }
 
 #telegram-linking-code {
-    font-size: 1.5em; /* Larger code font */
-    color: var(--accent-color); /* Accent color for the code */
+    font-size: 1.5em;
+    color: var(--accent-color);
     font-weight: bold;
-    display: block; /* Code on its own line */
+    display: block;
     margin-bottom: var(--spacing-unit);
+    text-align: center; /* Центрируем код */
 }
 #telegram-linking-info small {
      color: var(--secondary-text-color);

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -43,3 +45,16 @@ class TelegramUnlinkRequest(BaseModel):
 class TelegramUnlinkResponse(BaseModel):
      success: bool
      message: str | None = None
+
+class NetworkInfo(BaseModel):
+    chainId: int
+    name: str
+    explorer_url: str
+    rpc_urls: str
+    currency_symbol: str
+    short_name: Optional[str] = None
+    is_testnet: Optional[bool] = False
+    is_supported_on_frontend: Optional[bool] = True
+
+
+
