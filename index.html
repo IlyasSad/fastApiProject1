@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Управление Криптоактивами Web3</title>
+    <title>Quantum DEX - Управление Криптоактивами</title> <!-- Изменено название -->
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
@@ -17,14 +17,14 @@
 </head>
 <body>
 
-    <header class="bg-dark text-white text-center py-3">
+    <header> <!-- Убраны классы Bootstrap, стили в CSS -->
         <div class="container">
-            <h1 class="mb-0">Мое Web3 Приложение</h1>
-            <div id="wallet-status" class="mt-2">
-                <button id="connect-wallet-btn" class="btn btn-light btn-sm">Подключить Кошелек</button>
+            <h1>Quantum DEX</h1> <!-- Изменено название -->
+            <div id="wallet-status">
+                <button id="connect-wallet-btn" class="btn btn-sm">Подключить Кошелек</button> <!-- Класс btn-primary будет из CSS -->
                 <span id="wallet-address" class="d-none"></span>
                 <span id="wallet-network" class="d-none"></span>
-                <button id="disconnect-wallet-btn" class="btn btn-light btn-sm d-none">Отключить</button>
+                <button id="disconnect-wallet-btn" class="btn btn-sm d-none">Отключить</button> <!-- Классы оформления из CSS -->
             </div>
         </div>
     </header>
@@ -38,17 +38,18 @@
                 <button class="nav-link" id="bridge-tab-button" data-bs-toggle="tab" data-bs-target="#bridge-tab" type="button" role="tab" aria-controls="bridge-tab" aria-selected="false">Мост</button>
             </li>
              <li class="nav-item" role="presentation">
-                <button class="nav-link" id="telegram-tab-button" data-bs-toggle="tab" data-bs-target="#telegram-tab" type="button" role="tab" aria-controls="telegram-tab" aria-selected="false">Telegram Уведомления</button>
+                <button class="nav-link" id="telegram-tab-button" data-bs-toggle="tab" data-bs-target="#telegram-tab" type="button" role="tab" aria-controls="telegram-tab" aria-selected="false">Telegram</button> <!-- Сократил для компактности таба -->
             </li>
         </ul>
 
         <div class="tab-content" id="myTabContent">
             <!-- Swap Tab Content -->
             <div class="tab-pane fade show active" id="swap-tab" role="tabpanel" aria-labelledby="swap-tab-button">
-                <h2>Свап Токенов</h2>
-                <div id="swap-form" class="form-section mt-3">
+                <!-- УБРАН h2 отсюда -->
+                <div id="swap-form" class="form-section"> <!-- Убран mt-3 -->
+                    <h2>Свап Токенов</h2> <!-- Этот h2 остается внутри секции -->
                     <!-- Селектор Сети для Свапа -->
-                    <div class="form-card mb-3">
+                    <div class="form-card"> <!-- Убран mb-3, управляется form-card margin -->
                         <div class="form-label-row"><label for="swap-network-select" class="form-label">Сеть для Свапа</label></div>
                         <select class="form-select" id="swap-network-select"></select>
                     </div>
@@ -58,15 +59,15 @@
                          <div class="form-label-row"><label for="swap-from-amount" class="form-label">Отправить</label></div>
                          <div class="input-group">
                             <input type="number" class="form-control" id="swap-from-amount" placeholder="0" min="0">
-                            <button class="btn btn-outline-secondary token-select-btn" id="swap-from-token-btn" type="button" data-type="from">Выберите Токен</button>
+                            <button class="btn token-select-btn" id="swap-from-token-btn" type="button" data-type="from">Выберите Токен</button> <!-- Убран btn-outline-secondary, стилизуется через .token-select-btn -->
                          </div>
                          <small id="swap-from-balance" class="form-text text-muted"></small>
                     </div>
 
                     <!-- Кнопка СВАП (между секциями) -->
                     <div class="swap-button-container">
-                        <button id="swap-direction-btn" class="btn btn-secondary btn-sm rounded-circle">
-                             <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="arrow-down" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="16" height="16"><path fill="currentColor" d="M169.4 470.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 370.8 224 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 306.7L54.6 265.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z"></path></svg>
+                        <button id="swap-direction-btn" class="btn btn-secondary btn-sm rounded-circle"> <!-- btn-sm уже в CSS для .swap-button-container .btn-secondary -->
+                             <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="arrow-down" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path fill="currentColor" d="M169.4 470.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 370.8 224 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 306.7L54.6 265.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z"></path></svg>
                          </button>
                     </div>
 
@@ -75,73 +76,74 @@
                          <div class="form-label-row"><label for="swap-to-amount" class="form-label">Получить (приблизительно)</label></div>
                          <div class="input-group">
                             <input type="text" class="form-control" id="swap-to-amount" placeholder="0" readonly>
-                             <button class="btn btn-outline-secondary token-select-btn" id="swap-to-token-btn" type="button" data-type="to">Выберите Токен</button>
+                             <button class="btn token-select-btn" id="swap-to-token-btn" type="button" data-type="to">Выберите Токен</button> <!-- Убран btn-outline-secondary -->
                          </div>
                     </div>
 
                      <!-- Блок для отображения деталей свапа -->
-                     <div id="swap-details" class="alert alert-info mt-3 d-none">
+                     <div id="swap-details" class="alert alert-info mt-3 d-none"> <!-- mt-3 оставляем для отступа от формы -->
                      </div>
 
                     <!-- Кнопки действий -->
-                    <button id="get-swap-quote-btn" class="btn btn-primary w-100 mt-3">Получить курс</button>
-                    <button id="execute-swap-btn" class="btn btn-success w-100 mt-3 d-none">Выполнить Свап</button>
+                    <button id="get-swap-quote-btn" class="btn btn-primary w-100">Получить курс</button> <!-- Убран mt-3, .btn уже имеет margin-top -->
+                    <button id="execute-swap-btn" class="btn btn-success w-100 d-none">Выполнить Свап</button> <!-- Убран mt-3 -->
 
                     <!-- Параграф для отображения статуса выполнения -->
-                    <p id="swap-status" class="mt-3"></p>
+                    <p id="swap-status" class="mt-3"></p> <!-- mt-3 для отступа от кнопок -->
                 </div>
             </div>
 
             <!-- Bridge Tab Content -->
             <div class="tab-pane fade" id="bridge-tab" role="tabpanel" aria-labelledby="bridge-tab-button">
-                <h2>Перевод через Мост</h2>
-                 <div id="bridge-form" class="form-section mt-3">
+                <!-- УБРАН h2 отсюда -->
+                 <div id="bridge-form" class="form-section"> <!-- Убран mt-3 -->
+                    <h2>Перевод через Мост</h2> <!-- Этот h2 остается -->
                      <div id="bridge-from-network-section" class="form-card">
                          <div class="form-label-row"><label for="bridge-from-network" class="form-label">Из Сети</label></div>
                         <select class="form-select" id="bridge-from-network"></select>
-                         <div class="form-label-row mt-3"><label for="bridge-from-amount" class="form-label">Отправить</label></div>
+                         <div class="form-label-row mt-2"><label for="bridge-from-amount" class="form-label">Отправить</label></div> <!-- mt-2 для небольшого отступа -->
                          <div class="input-group">
                             <input type="number" class="form-control" id="bridge-from-amount" placeholder="0" min="0">
-                             <button class="btn btn-outline-secondary token-select-btn" id="bridge-from-token-btn" type="button" data-type="from">Выберите Токен</button>
+                             <button class="btn token-select-btn" id="bridge-from-token-btn" type="button" data-type="from">Выберите Токен</button> <!-- Убран btn-outline-secondary -->
                          </div>
                          <small id="bridge-from-balance" class="form-text text-muted"></small>
                      </div>
                     <div class="swap-button-container">
                         <button id="bridge-direction-btn" class="btn btn-secondary btn-sm rounded-circle">
-                             <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="arrow-down" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="16" height="16"><path fill="currentColor" d="M169.4 470.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 370.8 224 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 306.7L54.6 265.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z"></path></svg>
+                             <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="arrow-down" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path fill="currentColor" d="M169.4 470.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 370.8 224 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 306.7L54.6 265.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z"></path></svg>
                          </button>
                     </div>
                      <div id="bridge-to-network-section" class="form-card">
                          <div class="form-label-row"><label for="bridge-to-network" class="form-label">В Сеть</label></div>
                         <select class="form-select" id="bridge-to-network"></select>
-                         <div class="form-label-row mt-3"><label for="bridge-to-amount" class="form-label">Получить (приблизительно)</label></div>
+                         <div class="form-label-row mt-2"><label for="bridge-to-amount" class="form-label">Получить (приблизительно)</label></div> <!-- mt-2 -->
                          <div class="input-group">
                             <input type="text" class="form-control" id="bridge-to-amount" placeholder="0" readonly>
-                             <button class="btn btn-outline-secondary token-select-btn" id="bridge-to-token-btn" type="button" data-type="to">Выберите Токен</button>
+                             <button class="btn token-select-btn" id="bridge-to-token-btn" type="button" data-type="to">Выберите Токен</button> <!-- Убран btn-outline-secondary -->
                          </div>
                      </div>
-                      <div id="bridge-details" class="alert alert-info mt-3 d-none">
+                      <div id="bridge-details" class="alert alert-info mt-3 d-none"> <!-- mt-3 -->
                      </div>
-                     <button id="get-bridge-quote-btn" class="btn btn-primary w-100 mt-3">Найти лучший путь</button>
-                     <!-- <button id="approve-bridge-btn" class="btn btn-warning w-100 mt-3 d-none">Разрешить Токен</button> -->
-                    <button id="execute-bridge-btn" class="btn btn-success w-100 mt-3 d-none">Выполнить Мост</button>
-                     <p id="bridge-status" class="mt-3"></p>
+                     <button id="get-bridge-quote-btn" class="btn btn-primary w-100">Найти лучший путь</button> <!-- Убран mt-3 -->
+                    <button id="execute-bridge-btn" class="btn btn-success w-100 d-none">Выполнить Мост</button> <!-- Убран mt-3 -->
+                     <p id="bridge-status" class="mt-3"></p> <!-- mt-3 -->
                  </div>
             </div>
 
              <!-- Telegram Tab Content -->
              <div class="tab-pane fade" id="telegram-tab" role="tabpanel" aria-labelledby="telegram-tab-button">
-                 <h2>Telegram Уведомления</h2>
-                 <div id="telegram-section" class="form-section mt-3">
+                <!-- УБРАН h2 отсюда -->
+                 <div id="telegram-section" class="form-section"> <!-- Убран mt-3 -->
+                    <h2>Telegram Уведомления</h2> <!-- Этот h2 остается -->
                      <p id="telegram-status" class="lead">Статус: Не подключен.</p>
-                     <button id="link-telegram-btn" class="btn btn-primary mt-3">Подключить Telegram</button>
-                     <div id="telegram-linking-info" class="alert alert-info mt-3 d-none">
+                     <button id="link-telegram-btn" class="btn btn-primary">Подключить Telegram</button> <!-- Убран mt-3 -->
+                     <div id="telegram-linking-info" class="alert mt-3 d-none"> <!-- Убран alert-info, стилизуется через CSS -->
                          <p class="mb-1">Отправьте следующий код нашему боту <a href="#" id="telegram-bot-link" target="_blank" class="alert-link">@Ваш_Бот_Нейм</a> в Telegram:</p>
-                         <p class="h4"><strong id="telegram-linking-code"></strong></p>
+                         <p><strong id="telegram-linking-code"></strong></p> <!-- Убран h4 -->
                           <p class="mb-0"><small>После отправки кода статус обновится автоматически (может потребоваться некоторое время).</small></p>
                      </div>
-                      <button id="unlink-telegram-btn" class="btn btn-danger mt-3 d-none">Отключить Telegram</button>
-                     <p id="telegram-message" class="mt-3"></p>
+                      <button id="unlink-telegram-btn" class="btn btn-danger d-none">Отключить Telegram</button> <!-- Убран mt-3 -->
+                     <p id="telegram-message" class="mt-3"></p> <!-- mt-3 -->
                  </div>
              </div>
         </div> <!-- /tab-content -->
@@ -156,8 +158,8 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                     <input type="text" class="form-control mb-3" id="token-search" placeholder="Поиск токена...">
-                    <ul id="token-list" class="list-group">
+                     <input type="text" class="form-control" id="token-search" placeholder="Поиск токена..."> <!-- Убран mb-3 -->
+                    <ul id="token-list" class="list-group"> <!-- list-group не нужен, стилизуется #token-list -->
                     </ul>
                 </div>
             </div>
@@ -172,9 +174,9 @@
                     <h5 class="modal-title" id="transactionStatusModalLabel">Статус Транзакции</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <p id="transaction-modal-status" class="fw-bold"></p>
-                    <p id="transaction-modal-hash" class="text-muted small"></p>
+                <div class="modal-body text-center"> <!-- Добавил text-center для содержимого -->
+                    <p id="transaction-modal-status" class="fw-bold mb-2"></p>
+                    <p id="transaction-modal-hash" class="text-muted small mb-3"></p>
                     <a href="#" id="transaction-modal-explorer-link" target="_blank" class="btn btn-secondary btn-sm d-none">Посмотреть в эксплорере</a>
                 </div>
             </div>

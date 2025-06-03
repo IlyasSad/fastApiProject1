@@ -89,6 +89,6 @@ async def process_bridge_notification(
         ]
         message = "\n\n".join(message_lines)
 
-        await send_telegram_message(chat_id=telegram_link.chat_id, message_text=message)
+        await send_telegram_message(chat_id=telegram_link.telegram_chat_id, message_text=message)
     else:
         print(f"Для кошелька {wallet_address} не найдена активная Telegram-связка для уведомления о мосте.")
