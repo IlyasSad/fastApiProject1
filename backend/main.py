@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from fastapi.staticfiles import StaticFiles
-from api import tokens, telegram, networks
+from api import tokens, telegram, networks, operations
 
 
 
@@ -12,14 +12,15 @@ app = FastAPI()
 # Настройка CORS - разрешаем запросы с вашего фронтенда
 # В продакшене укажите конкретный URL вашего фронтенда вместо "*"
 origins = [
-    "http://localhost:5500", # Пример для Live Server в VS Code
+    "http://localhost:5500",
     "http://127.0.0.1:5500",
-    "http://localhost:63354", # Другие примеры локальных серверов
+    "http://localhost:63354",
     "http://127.0.0.1:8080",
-    "http://localhost:3000", # Пример для Create-React-App
+    "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "http://localhost:63342", # <<< ДОБАВЬТЕ ЭТУ СТРОКУ
-    "http://127.0.0.1:8001", # <<< И эту на всякий случай (иногда браузер использует 127.0.0.1)
+    "http://localhost:63342",
+    "http://127.0.0.1:8001",
+    'http://localhost:63343'# Это сам бэкенд, для него CORS не нужен
     # Добавьте ваш актуальный URL фронтенда при деплое
 ]
 
@@ -34,6 +35,7 @@ app.add_middleware(
 
 # Подключаем роуты API
 app.include_router(networks.router)
+app.include_router(operations.router)
 
 app.include_router(tokens.router)
 app.include_router(telegram.router)

@@ -3,7 +3,8 @@ from sqlalchemy import or_, func
 import models, schemas
 import random
 import string
-from datetime import datetime
+from web3 import Web3
+
 
 # === CRUD для Токенов ===
 
@@ -23,9 +24,8 @@ def get_token_by_address(db: Session, chain_id: int, address: str):
          # ethers.utils.getAddress(address) на фронтенде или web3.toChecksumAddress на бэке
          # Для простоты здесь ищем без учета регистра (может быть небезопасно в проде)
          # Лучше хранить и искать по checksummed адресу.
-          from web3 import Web3 # Предполагаем web3 установлена
           try:
-              checksum_address = Web3.toChecksumAddress(address)
+              checksum_address = Web3.to_checksum_address(address)
               return db.query(models.Token).filter(
                   models.Token.chain_id == chain_id,
                   models.Token.address == checksum_address # Или .ilike(address) для безрегистрового поиска
@@ -53,8 +53,7 @@ def create_token(db: Session, token: schemas.TokenCreate):
 # === CRUD для TelegramLink ===
 
 def get_telegram_link_by_wallet(db: Session, wallet_address: str):
-     # TODO: В идеале использовать checksummed адрес
-     return db.query(models.TelegramLink).filter(models.TelegramLink.wallet_address == wallet_address).first()
+     return db.query(models.TelegramLink).filter(models.TelegramLink.wallet_address == Web3.to_checksum_address(wallet_address)).first()
 
 def get_telegram_link_by_chat_id(db: Session, telegram_chat_id: str):
     return db.query(models.TelegramLink).filter(models.TelegramLink.telegram_chat_id == telegram_chat_id).first()

@@ -3,77 +3,92 @@
 let provider = null;
 let signer = null;
 let currentAccount = null;
-let currentChainId = null; // Хранит ID текущей сети, к которой ПОДКЛЮЧЕН кошелек
-let currentNetworkName = null; // Имя этой сети
+let currentChainId = null; // ID сети, к которой ФАКТИЧЕСКИ подключен кошелек
+let currentNetworkName = null; // Имя сети, к которой ФАКТИЧЕСКИ подключен кошелек
+
 let supportedNetworks = []; // Загружается с бэкенда
 
-/**
- * Загружает список поддерживаемых сетей с бэкенда.
- * Если сети уже загружены, ничего не делает.
- */
 async function loadSupportedNetworks() {
-    // Проверяем, есть ли уже валидные данные (не просто пустой массив)
-    if (supportedNetworks.length > 0 && typeof supportedNetworks[0]?.chainId === 'number') {
+    // Проверяем, не является ли supportedNetworks уже загруженным и валидным списком
+    if (supportedNetworks.length > 0 && typeof supportedNetworks[0]?.chainId === 'number' &&
+        supportedNetworks[0].name !== 'Ethereum (Fallback)' &&
+        supportedNetworks[0].name !== 'Ethereum (Error Fallback)') {
+        // console.log("wallet.js: Supported networks already loaded.");
         return;
     }
     console.log("wallet.js: Loading supported networks from backend...");
     try {
         const networksFromBackend = await utils.fetchData(`${utils.BACKEND_URL}/api/networks`);
+        console.log("wallet.js: Data received from /api/networks:", JSON.stringify(networksFromBackend, null, 2));
+
         if (networksFromBackend && Array.isArray(networksFromBackend) && networksFromBackend.length > 0) {
-            // Убедимся, что chainId это числа
-            supportedNetworks = networksFromBackend.map(n => ({
-                ...n,
-                chainId: parseInt(n.chainId, 10)
-            }));
-            console.log("wallet.js: Supported networks loaded:", supportedNetworks);
+            supportedNetworks = networksFromBackend.map(n => {
+                if (!n.explorerUrl) {
+                    console.warn(`wallet.js: Network ${n.name} (ID: ${n.chainId}) from backend is missing explorerUrl. Using default.`);
+                }
+                return {
+                    chainId: parseInt(n.chainId, 10),
+                    name: n.name,
+                    explorerUrl: n.explorerUrl || `https://etherscan.io/tx/` // Фолбэк для explorerUrl
+                    // Добавь другие поля, если они приходят и нужны: short_name, currency_symbol и т.д.
+                };
+            }).filter(n => !isNaN(n.chainId)); // Убираем сети с невалидным chainId
+
+            if (supportedNetworks.length === 0 && networksFromBackend.length > 0) {
+                 console.error("wallet.js: All networks from backend were filtered out or invalid.");
+                 supportedNetworks = [{ chainId: 1, name: 'Ethereum (Processing Error Fallback)', explorerUrl: 'https://etherscan.io/tx/' }];
+            } else {
+                console.log("wallet.js: Supported networks successfully processed:", supportedNetworks);
+            }
         } else {
-            console.error("wallet.js: Failed to load supported networks or list is empty. Using a minimal fallback.");
-            // Минимальный фоллбэк, чтобы приложение не падало полностью
-            supportedNetworks = [{ chainId: 1, name: 'Ethereum (Fallback)', explorerUrl: 'https://etherscan.io/tx/' }];
+            console.error("wallet.js: Failed to load supported networks (empty or invalid response). Using minimal fallback.");
+            supportedNetworks = [{ chainId: 1, name: 'Ethereum (Load Error Fallback)', explorerUrl: 'https://etherscan.io/tx/' }];
         }
     } catch (error) {
-        console.error("wallet.js: Error loading supported networks from backend:", error);
-        supportedNetworks = [{ chainId: 1, name: 'Ethereum (Error Fallback)', explorerUrl: 'https://etherscan.io/tx/' }];
+        console.error("wallet.js: Exception while loading supported networks:", error);
+        supportedNetworks = [{ chainId: 1, name: 'Ethereum (Exception Fallback)', explorerUrl: 'https://etherscan.io/tx/' }];
     }
 }
 
-/**
- * Возвращает URL эксплорера для указанного chainId.
- */
 function getExplorerUrl(chainId) {
-    if (supportedNetworks.length === 0) { // На случай, если сети не загрузились
-        console.warn("wallet.js: getExplorerUrl called before supportedNetworks loaded. Using default.");
-        return `https://etherscan.io/tx/`; // Общий дефолт
+    if (chainId === null || chainId === undefined) {
+        console.warn("wallet.js: getExplorerUrl called with null/undefined chainId. Returning default.");
+        return "https://etherscan.io/tx/";
     }
     const numericChainId = parseInt(chainId, 10);
+    if (isNaN(numericChainId)) {
+        console.warn(`wallet.js: getExplorerUrl with invalid non-numeric chainId: ${chainId}. Returning default.`);
+        return "https://etherscan.io/tx/";
+    }
+    if (!supportedNetworks || supportedNetworks.length === 0) {
+        // console.warn(`wallet.js: getExplorerUrl - supportedNetworks empty. Default for chainId: ${numericChainId}.`);
+        return "https://etherscan.io/tx/"; // Фолбэк, если сети еще не загружены
+    }
     const network = supportedNetworks.find(n => n.chainId === numericChainId);
-    return network ? network.explorerUrl : `https://etherscan.io/tx/`; // Дефолт, если сеть не найдена в списке
+    if (network && network.explorerUrl) {
+        return network.explorerUrl.endsWith('/') ? network.explorerUrl : network.explorerUrl + '/';
+    }
+    // console.warn(`wallet.js: getExplorerUrl - No specific explorerUrl for chainId: ${numericChainId}. Default Etherscan.`);
+    return "https://etherscan.io/tx/";
 }
 
-/**
- * Обновляет отображение балансов для текущей активной вкладки.
- * Вызывается при смене аккаунта, сети или после транзакций.
- */
 async function updateCurrentBalances() {
-    console.log("wallet.js: Attempting to update balances for the active tab...");
+    // console.log("wallet.js: Attempting to update balances for the active tab...");
     const activeTabElement = document.querySelector('.tab-pane.active');
-    if (!activeTabElement) {
-        console.log("wallet.js: No active tab found to update balances.");
-        return;
-    }
+    if (!activeTabElement) { /* console.log("wallet.js: No active tab to update balances."); */ return; }
+
     const tabId = activeTabElement.id.replace('-tab', '');
-    const account = wallet.getAccount(); // Используем геттер
-    const walletChainId = wallet.getChainId(); // Используем геттер
+    const account = getAccount();
+    const currentWalletChain = wallet.getChainId(); // Используем getChainId() для получения актуального значения
 
-    if (!account || walletChainId === null) {
-        console.log("wallet.js: Cannot update balances - wallet not fully connected or chainId missing.");
-        // Если кошелек отключается, модули должны сбросить свои балансы
-        if (window.swap?.updateCurrentBalances) window.swap.updateCurrentBalances();
-        if (window.bridge?.updateCurrentBalances) window.bridge.updateCurrentBalances();
+    if (!account || currentWalletChain === null) { // Проверяем и currentWalletChain
+        // console.log("wallet.js: Cannot update balances: Wallet not connected or chainId not determined.");
+        if (window.swap?.updateCurrentBalances) await window.swap.updateCurrentBalances();
+        if (window.bridge?.updateCurrentBalances) await window.bridge.updateCurrentBalances();
         return;
     }
 
-    console.log(`wallet.js: Updating balances for tab: '${tabId}', account: ${utils.formatAddress(account)}, walletChainId: ${walletChainId}`);
+    // console.log(`wallet.js: Updating balances for tab: '${tabId}', account: ${account}, walletChainId: ${currentWalletChain}`);
     if (tabId === 'swap' && window.swap?.updateCurrentBalances) {
         await window.swap.updateCurrentBalances();
     } else if (tabId === 'bridge' && window.bridge?.updateCurrentBalances) {
@@ -81,138 +96,14 @@ async function updateCurrentBalances() {
     }
 }
 
-/**
- * Центральная функция для обработки изменения состояния сети кошелька.
- * Вызывается из connectWallet и обработчика события 'chainChanged'.
- * Обновляет глобальное состояние сети, UI шапки и инициирует обновление активной вкладки.
- * @param {number} newChainIdFromProvider - ID сети, полученный от провайдера кошелька.
- * @param {string | null} networkNameFromProvider - Имя сети от провайдера.
- * @returns {Promise<{chainIdChanged: boolean, newChainId: number | null}>} - Результат обработки.
- */
-async function processWalletNetworkState(newChainIdFromProvider, networkNameFromProvider = null) {
-    console.log(`wallet.js: processWalletNetworkState called with newChainIdFromProvider=${newChainIdFromProvider}`);
-
-    if (supportedNetworks.length === 0 || typeof supportedNetworks[0]?.chainId !== 'number') {
-        await loadSupportedNetworks(); // Гарантируем загрузку сетей
-        if (supportedNetworks.length === 0 || typeof supportedNetworks[0]?.chainId !== 'number') {
-            console.error("wallet.js: CRITICAL - Supported networks could not be loaded in processWalletNetworkState.");
-            currentChainId = parseInt(newChainIdFromProvider, 10); // Устанавливаем как есть
-            currentNetworkName = networkNameFromProvider || "Неизвестная сеть (ошибка загрузки конфига)";
-            if(ui.updateWalletStatus) ui.updateWalletStatus(currentAccount, currentNetworkName, currentChainId);
-            if(ui.updateUIState) ui.updateUIState(false); // Блокируем, так как не можем проверить поддержку
-            alert(`Критическая ошибка: не удалось загрузить конфигурацию сетей. Функционал будет ограничен. Текущая сеть: ${currentNetworkName} (ID: ${currentChainId})`);
-            return { chainIdChanged: currentChainId !== null, newChainId: currentChainId };
-        }
-    }
-
-    const numericNewChainId = parseInt(newChainIdFromProvider, 10);
-    const networkConfig = supportedNetworks.find(n => n.chainId === numericNewChainId);
-    const oldChainId = currentChainId; // Сохраняем предыдущее значение
-
-    if (networkConfig) {
-        currentChainId = networkConfig.chainId;
-        currentNetworkName = networkConfig.name;
-        console.log(`wallet.js: Wallet network set to SUPPORTED: ${currentNetworkName} (ID: ${currentChainId})`);
-        if(ui.updateWalletStatus) ui.updateWalletStatus(currentAccount, currentNetworkName, currentChainId);
-        if(ui.updateUIState) ui.updateUIState(!!currentAccount); // Разблокируем, если аккаунт есть
-    } else {
-        currentChainId = numericNewChainId;
-        currentNetworkName = networkNameFromProvider || `Неподдерживаемая сеть (ID: ${currentChainId})`;
-        const message = `Сеть "${currentNetworkName}" не поддерживается этим приложением. Некоторые функции могут быть недоступны.`;
-        alert(message);
-        if(ui.updateWalletStatus) ui.updateWalletStatus(currentAccount, currentNetworkName, currentChainId);
-        if(ui.updateUIState) ui.updateUIState(false); // Блокируем UI, если сеть не поддерживается
-        console.warn(message);
-    }
-
-    const chainIdActuallyChanged = oldChainId !== currentChainId;
-    console.log(`wallet.js: Chain ID actually changed: ${chainIdActuallyChanged} (Old: ${oldChainId}, New: ${currentChainId})`);
-
-    // Если chainId изменился ИЛИ это первая установка (oldChainId был null и currentChainId теперь установлен)
-    if (chainIdActuallyChanged || (oldChainId === null && currentChainId !== null)) {
-        console.log(`wallet.js: Triggering full UI refresh for tabs due to network change or initial setup.`);
-        // Сбросить состояние ВСЕХ вкладок, чтобы они адаптировались к новой сети
-        if(window.swap?.resetState) await window.swap.resetState();
-        if(window.bridge?.resetState) await window.bridge.resetState();
-        if(window.telegram?.resetState) await window.telegram.resetState();
-
-        // И затем принудительно обновить АКТИВНУЮ вкладку
-        await refreshActiveTabData(currentChainId); // Передаем новый ID для синхронизации
-    } else if (currentAccount && currentChainId !== null) { // Если chainId не менялся, но нужно обновить (например, после смены аккаунта)
-        console.log(`wallet.js: Chain ID did not change, but refreshing active tab and balances.`);
-        await refreshActiveTabData(currentChainId); // Обновить активную вкладку
-    }
-
-    return { chainIdChanged: chainIdActuallyChanged, newChainId: currentChainId };
-}
-
-/**
- * Принудительно обновляет UI и данные для текущей активной вкладки.
- * @param {number | null} forceNetworkId - Если передан, вкладка должна инициализироваться для этой сети.
- */
-async function refreshActiveTabData(forceNetworkId = null) {
-    const activeTabElement = document.querySelector('.tab-pane.active');
-    if (!activeTabElement) {
-        console.log("wallet.js: No active tab to refresh.");
-        return;
-    }
-    const tabId = activeTabElement.id.replace('-tab', '');
-    const account = wallet.getAccount();
-    // Используем forceNetworkId если он есть, иначе текущую сеть кошелька
-    const effectiveChainId = forceNetworkId !== null ? forceNetworkId : currentChainId;
-
-    console.log(`wallet.js: Refreshing active tab '${tabId}' for effectiveChainId: ${effectiveChainId}`);
-
-    if (!account || effectiveChainId === null) {
-        console.log(`wallet.js: Cannot refresh tab '${tabId}', no account or effectiveChainId.`);
-        // Можно дополнительно сбросить UI вкладки, если она была активна, но стала невалидной
-        if (tabId === 'swap' && window.swap?.resetState) await window.swap.resetState();
-        if (tabId === 'bridge' && window.bridge?.resetState) await window.bridge.resetState();
-        return;
-    }
-
-    const isNetworkSupportedByApp = !!supportedNetworks.find(net => net.chainId === effectiveChainId);
-
-    if (isNetworkSupportedByApp) {
-        if (tabId === 'swap' && window.swap?.initializeSwapNetworkSelector) {
-            await window.swap.initializeSwapNetworkSelector(); // Эта функция должна учесть effectiveChainId
-        } else if (tabId === 'bridge' && window.bridge) {
-            if(window.bridge.populateNetworkSelects) window.bridge.populateNetworkSelects(); // Обновит селекторы, один из них должен стать effectiveChainId
-            if(window.bridge.updateCurrentBalances) await window.bridge.updateCurrentBalances();
-            // Обновление статуса моста
-            const fromChainB = window.bridge?.selectedFromChainId?.();
-            const toChainB = window.bridge?.selectedToChainId?.();
-            const fromTokenB = window.bridge?.selectedFromTokenBridge?.();
-            const toTokenB = window.bridge?.selectedToTokenBridge?.();
-            if(ui.updateBridgeStatus) ui.updateBridgeStatus(fromChainB && toChainB && fromTokenB && toTokenB ? "Найти лучший путь" : "Выберите сети и токены");
-        } else if (tabId === 'telegram' && window.telegram?.checkTelegramStatus) {
-            await window.telegram.checkTelegramStatus();
-            if(window.telegram.startPolling) window.telegram.startPolling();
-        }
-    } else {
-        const networkName = wallet.getNetworkName() || `ID ${effectiveChainId}`; // Используем геттер для имени
-        if (tabId === 'swap') {
-            if(window.swap?.initializeSwapNetworkSelector) await window.swap.initializeSwapNetworkSelector();
-            if(ui.updateSwapStatus) ui.updateSwapStatus(`Кошелек на неподдерживаемой сети "${networkName}".`);
-        }
-        if (tabId === 'bridge') {
-            if(window.bridge?.populateNetworkSelects) window.bridge.populateNetworkSelects();
-            if(ui.updateBridgeStatus) ui.updateBridgeStatus(`Кошелек на неподдерживаемой сети "${networkName}".`);
-        }
-        // и т.д.
-    }
-    // Общее обновление балансов в конце, так как состояние могло измениться
-    await updateCurrentBalances();
-}
-
-
 async function connectWallet() {
     // Гарантируем загрузку сетей перед попыткой подключения
-    if (supportedNetworks.length === 0 || typeof supportedNetworks[0]?.chainId !== 'number') {
+    if (supportedNetworks.length === 0 || typeof supportedNetworks[0]?.chainId !== 'number' || supportedNetworks[0].name.includes('Fallback')) {
+        console.log("wallet.js: connectWallet - pre-loading supportedNetworks...");
         await loadSupportedNetworks();
-        if (supportedNetworks.length === 0 || typeof supportedNetworks[0]?.chainId !== 'number') {
-            alert("Не удалось загрузить конфигурацию сетей. Пожалуйста, обновите страницу или попробуйте позже.");
-            return;
+        if (supportedNetworks.length === 0 || typeof supportedNetworks[0]?.chainId !== 'number' || supportedNetworks[0].name.includes('Fallback')) {
+            alert("Ошибка загрузки конфигурации сетей. Функциональность ограничена. Обновите страницу.");
+            // Не прерываем, но пользователь предупрежден
         }
     }
 
@@ -220,56 +111,74 @@ async function connectWallet() {
         try {
             const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
             if (accounts.length === 0) {
-                 console.log("User denied account access.");
-                 if(ui.updateWalletStatus) ui.updateWalletStatus(null); // Обновляем UI
+                 console.log("wallet.js: User denied account access.");
+                 if(ui.updateWalletStatus) ui.updateWalletStatus(null);
                  return;
             }
             currentAccount = accounts[0];
             provider = new ethers.providers.Web3Provider(window.ethereum);
             signer = provider.getSigner();
             const network = await provider.getNetwork();
+            const connectedChainId = network.chainId; // ID сети, к которой ФАКТИЧЕСКИ подключен кошелек
 
-            // Обрабатываем состояние сети и обновляем UI
-            const { newChainId } = await processWalletNetworkState(network.chainId, network.name);
+            const networkConfig = supportedNetworks.find(n => n.chainId === connectedChainId);
+            if (networkConfig) {
+                currentChainId = networkConfig.chainId;
+                currentNetworkName = networkConfig.name;
+                if(ui.updateWalletStatus) ui.updateWalletStatus(currentAccount, currentNetworkName, currentChainId);
+                if(ui.updateUIState) ui.updateUIState(true); // Сеть поддерживается
+            } else {
+                currentChainId = connectedChainId; // Сохраняем фактический ID
+                currentNetworkName = network.name || "Неизвестная сеть";
+                const message = `Сеть "${currentNetworkName}" (ID: ${currentChainId}) не поддерживается этим приложением.`;
+                alert(message); // Предупреждаем пользователя
+                if(ui.updateWalletStatus) ui.updateWalletStatus(currentAccount, currentNetworkName, currentChainId); // Показываем инфо о неподдерживаемой сети
+                if(ui.updateUIState) ui.updateUIState(false); // Блокируем основной UI
+            }
+            console.log(`wallet.js: Wallet connected: ${currentAccount}, Network: ${currentNetworkName} (ID: ${currentChainId})`);
 
-            // После установки состояния сети, принудительно обновляем активную вкладку
-            // (processWalletNetworkState уже вызывает refreshActiveTabData, если сеть изменилась)
-            // но если это первое подключение, а сеть не изменилась (была null), то нужно вызвать
-            if (newChainId !== null) {
-                 // await refreshActiveTabData(newChainId); // Это уже должно быть вызвано внутри processWalletNetworkState
+            // Обновляем состояние активной вкладки, если она есть
+            // Это важно, т.к. app.js еще может не вызвал 'shown.bs.tab' для начальной вкладки
+            const activeTabElement = document.querySelector('.tab-pane.active');
+            if (activeTabElement) {
+                const tabId = activeTabElement.id.replace('-tab', '');
+                 if (tabId === 'swap' && window.swap?.resetState) await window.swap.resetState();
+                 else if (tabId === 'bridge' && window.bridge?.resetState) await window.bridge.resetState();
+                 else if (tabId === 'telegram' && window.telegram?.resetState) await window.telegram.resetState();
+            } else { // Если активной вкладки нет (например, при самой первой загрузке до активации)
+                // Можно принудительно вызвать resetState для 'swap' (дефолтной вкладки)
+                if(window.swap?.resetState) await window.swap.resetState();
             }
 
-            console.log("Wallet connected by user:", utils.formatAddress(currentAccount), "Chain ID:", currentChainId, "Network:", currentNetworkName);
+            if(window.telegram?.checkTelegramStatus) await window.telegram.checkTelegramStatus();
+
         } catch (error) {
-            console.error("Error connecting wallet:", error);
+            console.error("wallet.js: Error connecting wallet:", error);
             let errorMessage = "Неизвестная ошибка подключения кошелька.";
             if (error.code === 4001) errorMessage = "Подключение отклонено пользователем.";
             else if (error.message) errorMessage = `Ошибка: ${error.message}`;
             alert(errorMessage);
-            disconnectWallet(); // Полный сброс состояния при ошибке
+            // Полный сброс состояния при ошибке подключения
+            currentAccount = null; currentChainId = null; currentNetworkName = null; provider = null; signer = null;
+            if(ui.updateWalletStatus) ui.updateWalletStatus(null);
+            if(ui.updateUIState) ui.updateUIState(false);
+            if(window.swap?.resetState) await window.swap.resetState();
+            if(window.bridge?.resetState) await window.bridge.resetState();
+            if(window.telegram?.resetState) await window.telegram.resetState();
         }
     } else {
         alert('MetaMask или другой Web3 провайдер не обнаружен. Пожалуйста, установите его.');
         if(ui.updateWalletStatus) ui.updateWalletStatus(null);
         if(ui.updateUIState) ui.updateUIState(false);
-        // При отсутствии MetaMask, сбрасываем состояние модулей
-        if(window.swap?.resetState) window.swap.resetState();
-        if(window.bridge?.resetState) window.bridge.resetState();
-        if(window.telegram?.resetState) window.telegram.resetState();
     }
 }
 
 function disconnectWallet() {
-    currentAccount = null;
-    currentChainId = null;
-    currentNetworkName = null;
-    provider = null;
-    signer = null;
-    console.log("wallet.js: Wallet disconnected by user or error.");
+    console.log("wallet.js: Disconnecting wallet (frontend state reset).");
+    currentAccount = null; currentChainId = null; currentNetworkName = null; provider = null; signer = null;
     if(ui.updateWalletStatus) ui.updateWalletStatus(null);
-    if(ui.updateUIState) ui.updateUIState(false); // Блокируем формы
-    // Сброс состояния всех модулей
-    if(window.swap?.resetState) window.swap.resetState();
+    if(ui.updateUIState) ui.updateUIState(false);
+    if(window.swap?.resetState) window.swap.resetState(); // Используем await, если они async
     if(window.bridge?.resetState) window.bridge.resetState();
     if(window.telegram?.resetState) window.telegram.resetState();
 }
@@ -279,25 +188,35 @@ async function switchChain(targetChainId) {
         console.error("wallet.js: MetaMask not installed or invalid targetChainId for switchChain:", targetChainId);
         return false;
     }
-    const numericTargetChainId = parseInt(targetChainId, 10);
+    const numericTargetChainId = parseInt(targetChainId, 10); // Убедимся, что это число
     if (isNaN(numericTargetChainId)) {
         console.error("wallet.js: Invalid non-numeric targetChainId for switchChain:", targetChainId);
         return false;
     }
 
-    if (supportedNetworks.length === 0 || typeof supportedNetworks[0]?.chainId !== 'number') await loadSupportedNetworks();
+    // Гарантируем, что supportedNetworks загружен
+    if (supportedNetworks.length === 0 || typeof supportedNetworks[0]?.chainId !== 'number' || supportedNetworks[0].name.includes('Fallback')) {
+        await loadSupportedNetworks();
+    }
     const networkToSwitch = supportedNetworks.find(n => n.chainId === numericTargetChainId);
-
     if (!networkToSwitch) {
-        alert(`Попытка переключиться на неподдерживаемую приложением сеть (ID: ${numericTargetChainId}). Пожалуйста, выберите сеть из списка.`);
+        alert(`Попытка переключиться на неподдерживаемую приложением сеть (ID: ${numericTargetChainId}).`);
         return false;
     }
 
     const chainIdHex = '0x' + numericTargetChainId.toString(16);
+    const currentActiveWalletChain = wallet.getChainId(); // Получаем текущую сеть кошелька
+
+    // Если кошелек уже на нужной сети, ничего не делаем
+    if (currentActiveWalletChain === numericTargetChainId) {
+        console.log(`wallet.js: Wallet is already on the target network ${networkToSwitch.name} (ID: ${numericTargetChainId}). No switch needed.`);
+        return true; // Считаем успешным, так как уже на нужной сети
+    }
 
     try {
-        if (ui.updateSwapStatus) ui.updateSwapStatus(`Запрос на переключение сети на ${networkToSwitch.name}...`); // Информируем пользователя
-        else if (ui.updateBridgeStatus) ui.updateBridgeStatus(`Запрос на переключение сети на ${networkToSwitch.name}...`);
+        const statusMsgLocation = document.querySelector('.tab-pane.active .lead, .tab-pane.active p:last-child'); // Попытка найти место для статуса
+        if(statusMsgLocation) statusMsgLocation.textContent = `Запрос на переключение сети на ${networkToSwitch.name}...`;
+        else console.log(`wallet.js: Requesting wallet switch to ${networkToSwitch.name}...`);
 
         console.log(`wallet.js: Requesting wallet to switch to chain ID: ${numericTargetChainId} (Hex: ${chainIdHex})`);
         await window.ethereum.request({
@@ -305,19 +224,17 @@ async function switchChain(targetChainId) {
             params: [{ chainId: chainIdHex }],
         });
         console.log(`wallet.js: Switch chain request sent for chain ID: ${numericTargetChainId}. Waiting for 'chainChanged' event.`);
-        // НЕ обновляем currentChainId здесь. Ждем события 'chainChanged'.
-        return true; // Запрос успешно отправлен
+        // Не обновляем currentChainId здесь. Ждем события 'chainChanged'.
+        return true;
     } catch (switchError) {
         console.error(`wallet.js: Failed to switch to chain ID ${numericTargetChainId}:`, switchError);
-        let alertMsg = `Ошибка при переключении сети: ${switchError.message || JSON.stringify(switchError)}`;
-        if (switchError.code === 4001) {
-            alertMsg = "Запрос на переключение сети был отклонен пользователем.";
-        } else if (switchError.code === 4902) {
-            alertMsg = `Сеть ${networkToSwitch.name} (ID: ${numericTargetChainId}) не добавлена в ваш кошелек. Пожалуйста, добавьте ее вручную.`;
+        if (switchError.code === 4902) {
+            alert(`Сеть ${networkToSwitch.name} (ID: ${numericTargetChainId}) не добавлена в ваш кошелек. Пожалуйста, добавьте ее вручную.`);
+        } else if (switchError.code === 4001) {
+            alert("Запрос на переключение сети был отклонен пользователем.");
+        } else {
+            alert(`Произошла ошибка при попытке переключения сети: ${switchError.message}`);
         }
-        alert(alertMsg);
-        // Восстанавливаем UI статус активной вкладки, так как переключение не удалось
-        await refreshActiveTabData(currentChainId); // Обновить на основе текущей (неизменившейся) сети кошелька
         return false;
     }
 }
@@ -325,75 +242,104 @@ async function switchChain(targetChainId) {
 // --- Обработчики событий от Web3 провайдера (MetaMask) ---
 if (typeof window.ethereum !== 'undefined') {
     window.ethereum.on('accountsChanged', async (accounts) => {
-        console.log("wallet.js: MetaMask event: accountsChanged received", accounts);
-        if (supportedNetworks.length === 0 || typeof supportedNetworks[0]?.chainId !== 'number') await loadSupportedNetworks();
+        console.log("WALLET.JS: 'accountsChanged' event! Accounts:", accounts);
+        if (supportedNetworks.length === 0 || typeof supportedNetworks[0]?.chainId !== 'number' || supportedNetworks[0].name.includes('Fallback')) await loadSupportedNetworks();
 
-        const oldAccount = currentAccount;
         if (accounts.length === 0) {
-            console.log("wallet.js: MetaMask accounts disconnected by user (accounts array empty).");
+            console.log("WALLET.JS: All accounts disconnected.");
             disconnectWallet();
         } else {
             currentAccount = accounts[0];
-            if (oldAccount !== currentAccount || oldAccount === null) { // Обновляем, если аккаунт изменился или это первая установка
-                console.log("wallet.js: MetaMask account actually changed to:", utils.formatAddress(currentAccount));
-                if (!provider) provider = new ethers.providers.Web3Provider(window.ethereum); // Инициализируем, если еще нет
-                signer = provider.getSigner(currentAccount); // Всегда обновляем signer
-
-                if(ui.updateWalletStatus) ui.updateWalletStatus(currentAccount, currentNetworkName, currentChainId);
-                const isNetSupported = !!supportedNetworks.find(n => n.chainId === currentChainId);
-                if(ui.updateUIState) ui.updateUIState(!!currentAccount && isNetSupported);
-
-                if (currentChainId !== null) {
-                    // Сеть не менялась, но аккаунт сменился. Обновляем вкладки.
-                    // processWalletNetworkState поймет, что chainId не изменился, но вызовет refreshActiveTabData
-                    await processWalletNetworkState(currentChainId, currentNetworkName);
-                } else if (provider) { // Если это первое событие accountsChanged и сеть еще не была установлена
-                    const network = await provider.getNetwork();
-                    await processWalletNetworkState(network.chainId, network.name);
-                }
-                if(window.telegram?.checkTelegramStatus) await window.telegram.checkTelegramStatus();
-            } else {
-                console.log("wallet.js: MetaMask accountsChanged event, but account is the same.");
+            console.log("WALLET.JS: Account changed to:", currentAccount);
+            if (window.ethereum) { // Провайдер должен быть, если событие сработало
+                 provider = new ethers.providers.Web3Provider(window.ethereum);
+                 signer = provider.getSigner();
             }
+            // currentChainId и currentNetworkName не меняются при смене аккаунта, используем существующие
+            const isNetSupported = !!supportedNetworks.find(n => n.chainId === currentChainId);
+            if(ui.updateWalletStatus) ui.updateWalletStatus(currentAccount, currentNetworkName, currentChainId);
+            if(ui.updateUIState) ui.updateUIState(!!currentAccount && isNetSupported); // Обновляем UI с учетом поддержки сети
+
+            // Обновляем состояние активной вкладки
+            const activeTabElement = document.querySelector('.tab-pane.active');
+            if (activeTabElement) {
+                const tabId = activeTabElement.id.replace('-tab', '');
+                if (tabId === 'swap' && window.swap?.resetState) await window.swap.resetState();
+                else if (tabId === 'bridge' && window.bridge?.resetState) await window.bridge.resetState();
+                else if (tabId === 'telegram' && window.telegram?.resetState) {
+                    await window.telegram.resetState();
+                    if (window.telegram.checkTelegramStatus) await window.telegram.checkTelegramStatus();
+                }
+            }
+             if(window.telegram?.checkTelegramStatus && (!activeTabElement || activeTabElement.id.replace('-tab','') !=='telegram')) {
+                await window.telegram.checkTelegramStatus(); // Проверить статус телеграма в любом случае
+             }
         }
     });
 
     window.ethereum.on('chainChanged', async (chainIdHex) => {
-        console.log("wallet.js: MetaMask event: chainChanged to network", chainIdHex);
+        console.log("WALLET.JS: 'chainChanged' event! Hex:", chainIdHex);
         const newConnectedChainId = parseInt(chainIdHex, 16);
 
-        let networkNameFromProvider = "Неизвестная сеть";
-        try {
-            // Не создаем новый провайдер, если он уже есть, используем существующий
-            const currentProvider = provider || new ethers.providers.Web3Provider(window.ethereum);
-            const networkInfo = await currentProvider.getNetwork();
-            networkNameFromProvider = networkInfo.name;
-            if (!provider) provider = currentProvider; // Сохраняем, если не было
-        } catch (e) { console.error("wallet.js: Could not get network name in chainChanged:", e); }
+        if (supportedNetworks.length === 0 || typeof supportedNetworks[0]?.chainId !== 'number' || supportedNetworks[0].name.includes('Fallback')) {
+            await loadSupportedNetworks();
+        }
+        if (window.ethereum) {
+             provider = new ethers.providers.Web3Provider(window.ethereum);
+             if(currentAccount) signer = provider.getSigner();
+        } else { return; /* Не должно произойти */ }
 
-        // processWalletNetworkState обработает обновление currentChainId, currentNetworkName, UI шапки,
-        // сброс всех вкладок и принудительное обновление активной вкладки.
-        await processWalletNetworkState(newConnectedChainId, networkNameFromProvider);
+        const oldChainIdForLog = currentChainId;
+        const networkConfig = supportedNetworks.find(n => n.chainId === newConnectedChainId);
+
+        if (networkConfig) {
+            currentChainId = networkConfig.chainId;
+            currentNetworkName = networkConfig.name;
+        } else {
+            let tempNetName = "Неизвестная сеть";
+            try { const tempNetInfo = await provider.getNetwork(); tempNetName = tempNetInfo.name || tempNetName; } catch (e) { /*...*/ }
+            currentChainId = newConnectedChainId;
+            currentNetworkName = tempNetName;
+        }
+        console.log(`WALLET.JS: Chain ID in state updated from ${oldChainIdForLog} to ${currentChainId} (${currentNetworkName})`);
+
+        if(ui.updateWalletStatus) ui.updateWalletStatus(currentAccount, currentNetworkName, currentChainId);
+        if(ui.updateUIState) ui.updateUIState(!!currentAccount && !!networkConfig); // UI активен, если кошелек подключен и сеть ПОДДЕРЖИВАЕТСЯ
+
+        // Обновить состояние АКТИВНОЙ вкладки
+        const activeTabElement = document.querySelector('.tab-pane.active');
+        if (activeTabElement) {
+            const tabId = activeTabElement.id.replace('-tab', '');
+            console.log(`WALLET.JS: 'chainChanged' - Updating active tab '${tabId}' state.`);
+            if (tabId === 'swap' && window.swap?.resetState) await window.swap.resetState();
+            else if (tabId === 'bridge' && window.bridge?.resetState) await window.bridge.resetState();
+            else if (tabId === 'telegram' && window.telegram?.resetState) {
+                await window.telegram.resetState();
+                if (window.telegram.checkTelegramStatus) await window.telegram.checkTelegramStatus();
+                 // Запускаем поллинг только если кошелек подключен и сеть поддерживается
+                 if (currentAccount && networkConfig && window.telegram.startPolling) {
+                      window.telegram.startPolling();
+                 }
+            }
+        }
+        console.log("WALLET.JS: 'chainChanged' event processing finished.");
     });
 
-    window.ethereum.on('disconnect', (error) => { // provider_request RPC Error: Method not found.
-        console.error("wallet.js: MetaMask event: disconnected (error code " + error?.code + ")", error);
-        // Событие 'disconnect' не всегда надежно и может иметь разные коды.
-        // accountsChanged с пустым массивом более надежный индикатор.
-        // Но на всякий случай, сбрасываем состояние.
+    window.ethereum.on('disconnect', (error) => { // disconnect более надежен, чем message { type: 'disconnect' }
+        console.error("WALLET.JS: MetaMask disconnected (event 'disconnect'). Error:", error);
         disconnectWallet();
     });
+
 } else {
-    // Это предупреждение может появляться при первой загрузке, до полной инициализации MetaMask.
-    // Если MetaMask установлен, он должен исчезнуть после инициализации кошелька.
-    // console.warn("wallet.js: MetaMask not detected when setting up global event listeners.");
+    console.warn("wallet.js: MetaMask (window.ethereum) not detected during initial setup.");
+    // Можно вызвать disconnectWallet или установить начальное состояние UI для "нет провайдера"
+    // disconnectWallet(); // Это сбросит UI и переменные
 }
 
-// --- Экспорт ---
 window.wallet = {
     connectWallet,
     disconnectWallet,
-    loadSupportedNetworks, // Важно, чтобы app.js мог вызвать это при старте
+    loadSupportedNetworks,
     getAccount: () => currentAccount,
     getProvider: () => provider,
     getSigner: () => signer,

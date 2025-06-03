@@ -217,42 +217,49 @@ ui.updateSwapStatus = function(message) {
     }
 };
 
+// js/ui.js
 ui.populateNetworkSelect = function(selectElementId, networks, selectedChainId = null) {
-    // Эта функция вызывается из bridge.js и swap.js, ui.elements может быть еще не готов при первом вызове из app.js
-    // Поэтому используем document.getElementById напрямую
-    const selectElement = document.getElementById(selectElementId); // Используем document.getElementById
+    const selectElement = document.getElementById(selectElementId);
     if (!selectElement) {
         console.warn(`populateNetworkSelect: Element with ID '${selectElementId}' not found.`);
         return;
     }
-    // ... (логика как была) ...
-    selectElement.innerHTML = '';
+
+    selectElement.innerHTML = ''; // Очищаем существующие опции
+
     const defaultOption = document.createElement('option');
-    defaultOption.value = "";
+    defaultOption.value = ""; // Пустое значение для опции "Выберите сеть"
     defaultOption.textContent = "-- Выберите сеть --";
-    // defaultOption.disabled = true; // Не делаем disabled, чтобы можно было выбрать "ничего"
-    defaultOption.selected = selectedChainId === null; // Выбираем, если нет selectedChainId
     selectElement.appendChild(defaultOption);
+
+    let newSelectedValue = ""; // Значение, которое будет установлено для select элемента
 
     if (networks && networks.length > 0) {
         networks.forEach(network => {
             const option = document.createElement('option');
-            option.value = network.chainId;
+            option.value = network.chainId.toString(); // Убедимся, что value - строка
             option.textContent = `${network.name} (ID: ${network.chainId})`;
-            if (selectedChainId !== null && network.chainId === selectedChainId) {
-                option.selected = true;
-                defaultOption.selected = false;
-            }
             selectElement.appendChild(option);
+
+            // Если эта сеть должна быть выбрана, запоминаем ее chainId для установки в select.value
+            if (selectedChainId !== null && network.chainId === selectedChainId) {
+                newSelectedValue = network.chainId.toString();
+            }
         });
     } else {
-        // Если нет сетей, можно добавить сообщение
+        // Если сетей нет, можно добавить информационную опцию
         const noNetOption = document.createElement('option');
         noNetOption.textContent = "Сети не загружены";
         noNetOption.disabled = true;
         selectElement.appendChild(noNetOption);
     }
-    // Триггер 'change' не нужен здесь, он вызовется при выборе пользователем или программной смене value
+
+    // Явно устанавливаем значение самого select элемента.
+    // Это автоматически выберет соответствующий <option>.
+    selectElement.value = newSelectedValue;
+
+    // Для отладки, чтобы видеть, какое значение было установлено
+    // console.log(`ui.populateNetworkSelect: ID '${selectElementId}', requested to select chainId: ${selectedChainId}, actual select.value after population: '${selectElement.value}'`);
 };
 
 ui.updateBridgeDetails = function(quoteData, fromChain, toChain, fromToken, toToken) {
