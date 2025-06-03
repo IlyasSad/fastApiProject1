@@ -1,61 +1,71 @@
 /* === CSS Variables for Theme === */
 :root {
-    --background-color: #0c0e13;
-    --card-background: #1b1d22;
-    --text-color: #fbfcff;
-    --secondary-text-color: #a8aab0;
-    --border-color: #282b33;
-    --primary-color: #4779ff;
-    --accent-color: #4779ff;
-    --accent-color-dark: #3a6ad8;
-    --success-color: #79ffcf;
-    --warning-color: #e2a140;
-    --danger-color: #ff6a6a;
+    /* Core Palette - Sophisticated Dark Theme with Purple Accent */
+    --background-color: #10121A;
+    --card-background: #1A1D2A;
+    --text-color: #E0E0E5;
+    --secondary-text-color: #9EA3B8;
+    --border-color: #2A2F42;
+
+    /* Accent Colors */
+    --primary-color-rgb: 123, 104, 238;
+    --primary-color: rgb(var(--primary-color-rgb));
+    --accent-color: var(--primary-color);
+    --accent-color-dark: #6A5ACD;
+
+    /* Semantic Colors */
+    --success-color: #4CAF50;
+    --success-color-text: #FFFFFF;
+    --warning-color: #FFC107;
+    --warning-color-text: #10121A;
+    --danger-color: #F44336;
+    --danger-color-text: #FFFFFF;
+
+    /* UI Elements */
     --button-primary-background: var(--primary-color);
     --button-primary-color: #fff;
-    --button-secondary-background: #24272e;
+    --button-secondary-background: #2A2F42;
     --button-secondary-color: var(--text-color);
-    --button-border-radius: 0.375rem;
-    --input-background: #1b1d22;
+    --button-border-radius: 0.3rem;
+    --input-background: #161925;
     --input-color: var(--text-color);
     --input-border: 1px solid var(--border-color);
-    --spacing-unit: 1rem;
 
-    --button-padding-y: calc(var(--spacing-unit) * 0.6);
+    /* Spacing & Sizing - Slightly more spacious */
+    --spacing-unit: 0.85rem;
+    --button-padding-y: calc(var(--spacing-unit) * 0.65);
     --button-padding-x: calc(var(--spacing-unit) * 1.2);
-    --button-font-size: 0.9em;
-    --form-element-padding-y: calc(var(--spacing-unit) * 0.6);
-    --form-element-font-size: 0.95em;
-    --card-padding: calc(1.5 * var(--spacing-unit));
-    --header-height: 65px; /* Примерная высота хедера */
+    --button-font-size: 0.85em;
+    --form-element-padding-y: calc(var(--spacing-unit) * 0.65);
+    --form-element-font-size: 0.9em;
+    --card-padding: calc(1.35 * var(--spacing-unit));
+    --header-height: 60px;
+
+    /* For focused content area */
+    --main-content-max-width: 690px;
 }
 
 /* === General Styles === */
 body {
     font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    line-height: 1.6;
+    line-height: 1.55;
     background-color: var(--background-color);
     color: var(--text-color);
-    padding-bottom: calc(2 * var(--spacing-unit));
-}
-
-.container {
-    /* Bootstrap контейнер */
-    /* max-width: 1200px; /* Ограничиваем общую ширину для больших экранов, если нужно */
+    padding-bottom: calc(1.5 * var(--spacing-unit));
 }
 
 /* === Header === */
 header {
     background: var(--background-color);
     color: var(--text-color);
-    padding: 0 calc(var(--spacing-unit) * 1.5); /* Горизонтальный padding для контейнера */
+    padding: 0 calc(var(--spacing-unit) * 1.25);
     border-bottom: 1px solid var(--border-color);
     height: var(--header-height);
     display: flex;
     align-items: center;
-    position: sticky; /* Делаем хедер "липким" */
+    position: sticky;
     top: 0;
-    z-index: 1030; /* Выше чем .sticky-top Bootstrap по умолчанию */
+    z-index: 1030;
 }
 
 header .header-content {
@@ -63,109 +73,152 @@ header .header-content {
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    max-width: 1320px; /* Соответствует Bootstrap .container-xl */
+    max-width: 1320px;
     margin: 0 auto;
+    position: relative;
 }
 
+header .header-left {
+    flex-shrink: 0;
+    z-index: 1;
+}
 header .header-left h1 {
     margin: 0;
-    font-size: 1.5em; /* Чуть меньше для баланса */
+    font-size: 1.45em;
     font-weight: 600;
     color: var(--text-color);
 }
 
 header .header-center {
-    flex-grow: 1;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
     display: flex;
     justify-content: center;
+    z-index: 2;
 }
 
 header .header-right {
+    flex-shrink: 0;
+    margin-left: auto; /* Pushes the block to the right */
     display: flex;
     align-items: center;
+    z-index: 1;
 }
 
 #wallet-status {
     display: flex;
     align-items: center;
-    gap: calc(var(--spacing-unit) / 2);
-    font-size: 0.85em;
+    gap: calc(var(--spacing-unit) * 1); /* Увеличим немного отступ между элементами, если нужно */
+    font-size: 0.9em; /* Можно немного увеличить базовый шрифт для статуса, если кнопки станут очень большими */
     color: var(--secondary-text-color);
 }
+
+/* Styles for all buttons within #wallet-status */
 #wallet-status .btn {
-    padding: 0.25rem 0.6rem;
-    font-size: 0.85em;
+    padding: calc(var(--spacing-unit) * 0.4) calc(var(--spacing-unit) * 0.8);
+    font-size: 0.875em;
     border-radius: var(--button-border-radius);
+    line-height: 1.4;
+    font-weight: 500;
 }
+
+/* Specific styles for "Connect Wallet" button */
 #connect-wallet-btn {
     background-color: var(--primary-color);
     color: var(--button-primary-color);
     border: 1px solid var(--primary-color);
+    padding: calc(var(--spacing-unit) * 0.9) calc(var(--spacing-unit) * 2.5); /* <<<< ЗНАЧИТЕЛЬНО УВЕЛИЧЕН PADDING */
+    font-size: 1.3em; /* <<<< ЗНАЧИТЕЛЬНО УВЕЛИЧЕН FONT-SIZE */
+    font-weight: 600;
+    border-radius: var(--button-border-radius); /* Применяем общий радиус */
+    line-height: 1.3; /* Для лучшего вертикального выравнивания текста */
 }
 #connect-wallet-btn:hover {
     background-color: var(--accent-color-dark);
     border-color: var(--accent-color-dark);
 }
+
+/* Specific styles for "Disconnect" button */
 #disconnect-wallet-btn {
-    background-color: transparent;
-    color: var(--secondary-text-color);
+    background-color: var(--button-secondary-background);
+    color: var(--text-color);
     border: 1px solid var(--border-color);
+    padding: calc(var(--spacing-unit) * 0.8) calc(var(--spacing-unit) * 2.2); /* <<<< ЗНАЧИТЕЛЬНО УВЕЛИЧЕН PADDING */
+    font-size: 100em; /* <<<< ЗНАЧИТЕЛЬНО УВЕЛИЧЕН FONT-SIZE */
+    font-weight: 500; /* Сделал чуть менее жирным, чем Connect */
+    border-radius: var(--button-border-radius); /* Применяем общий радиус */
+    line-height: 1.3; /* Для лучшего вертикального выравнивания текста */
 }
 #disconnect-wallet-btn:hover {
-    background-color: var(--card-background);
+    background-color: var(--border-color);
     color: var(--text-color);
-    border-color: var(--border-color);
 }
 
-#wallet-address, #wallet-network {
-    margin-right: calc(var(--spacing-unit) / 2);
-    font-weight: bold;
+#wallet-address,
+#wallet-network {
+    font-weight: 500;
     color: var(--text-color);
+    white-space: nowrap;
+    line-height: 1.5; /* Скорректируем, чтобы лучше совпадало с высотой больших кнопок */
+    font-size: 0.9em; /* Можно также немного увеличить шрифт адреса/сети */
 }
+#wallet-address {
+    /* max-width: 150px; */
+    /* overflow: hidden; */
+    /* text-overflow: ellipsis; */
+    margin-right: calc(var(--spacing-unit) * 0.5); /* Увеличил отступ */
+}
+#wallet-network {
+     margin-right: calc(var(--spacing-unit) * 1); /* Увеличил отступ от кнопки Disconnect */
+}
+
 
 /* === Tab Navigation in Header === */
 .header-center .nav-tabs {
     border-bottom: none;
     margin-bottom: 0;
-    display: flex; /* Для выравнивания */
+    display: flex;
 }
 
 .header-center .nav-link {
     color: var(--secondary-text-color);
     border: none;
-    border-bottom: 2px solid transparent;
-    margin: 0 calc(var(--spacing-unit) * 0.5); /* Отступы между табами */
-    transition: color 0.3s ease, border-bottom-color 0.3s ease;
+    border-bottom: 3px solid transparent;
+    margin: 0 calc(var(--spacing-unit) * 0.6);
+    transition: color 0.25s ease, border-bottom-color 0.25s ease;
     background-color: transparent;
-    padding: calc(var(--spacing-unit) * 0.5) calc(var(--spacing-unit) * 0.75); /* Компактные табы */
-    font-size: 0.9em;
+    padding: calc(var(--spacing-unit) * 0.65) calc(var(--spacing-unit) * 1);
+    font-size: 0.925em;
     font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
 }
 
 .header-center .nav-link:hover {
     color: var(--text-color);
-    border-bottom-color: var(--accent-color);
+    border-bottom-color: rgba(var(--primary-color-rgb), 0.5);
 }
 
 .header-center .nav-link.active {
     color: var(--text-color);
     border-bottom-color: var(--accent-color);
-    font-weight: bold;
+    font-weight: 600;
     background-color: transparent;
 }
 
 /* === Main Content Area === */
 .main-content-wrapper {
-    max-width: 720px; /* Ограничиваем ширину основного контента */
-    margin: 0 auto; /* Центрируем */
-    padding-top: calc(var(--spacing-unit) * 1.5); /* Отступ от хедера */
+    max-width: var(--main-content-max-width);
+    margin: 0 auto;
+    padding-top: calc(var(--spacing-unit) * 1.2);
 }
 
 .tab-content {
     padding: 0 !important;
     border: none !important;
     background-color: transparent !important;
-    /* padding-top убран, теперь он в .main-content-wrapper */
 }
 
 
@@ -174,12 +227,12 @@ header .header-right {
     background-color: var(--card-background);
     border: 1px solid var(--border-color);
     padding: var(--card-padding);
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 0.4rem;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: var(--spacing-unit); /* Отступ между секциями, если их несколько на странице */
+    margin-bottom: calc(var(--spacing-unit) * 1.2);
 }
 
 .form-section h2 {
@@ -193,13 +246,13 @@ header .header-right {
 .form-card {
      background-color: var(--input-background);
      border: var(--input-border);
-     border-radius: 0.375rem;
+     border-radius: 0.3rem;
      padding: calc(var(--spacing-unit) * 0.8);
      width: 100%;
      margin-bottom: calc(var(--spacing-unit) * 0.6);
      display: flex;
      flex-direction: column;
-     gap: calc(var(--spacing-unit) / 3);
+     gap: calc(var(--spacing-unit) / 3.2);
 }
 
 .form-label-row {
@@ -211,10 +264,10 @@ header .header-right {
 
 .form-label {
      display: block;
-     margin-bottom: calc(var(--spacing-unit) / 4) !important;
+     margin-bottom: calc(var(--spacing-unit) / 4.5) !important;
      font-weight: 500;
      color: var(--secondary-text-color);
-     font-size: 0.85em;
+     font-size: 0.825em;
 }
 
 
@@ -227,12 +280,12 @@ header .header-right {
 }
 
 .input-group .form-control {
-     flex: 1 1 150px;
+     flex: 1 1 140px;
      min-width: 0;
      background-color: transparent;
      border: none;
      padding: calc(var(--spacing-unit) * 0.2) 0;
-     font-size: 1.4em;
+     font-size: 1.35em;
      font-weight: 700;
      color: var(--text-color);
 }
@@ -246,7 +299,7 @@ header .header-right {
 
 .input-group .form-control::placeholder {
     color: var(--secondary-text-color);
-    opacity: 0.8;
+    opacity: 0.7;
 }
 
 
@@ -254,14 +307,12 @@ header .header-right {
     background-color: var(--button-secondary-background);
     color: var(--button-secondary-color);
     border: none;
-    padding: calc(var(--spacing-unit) / 2.5) calc(var(--spacing-unit) / 1.5);
+    padding: calc(var(--spacing-unit) / 2.7) calc(var(--spacing-unit) / 1.5);
     border-radius: 9999px;
-    font-size: 0.85em;
+    font-size: 0.825em;
     display: flex;
     align-items: center;
-    gap: calc(var(--spacing-unit) / 3);
-    position: static !important;
-    transform: none !important;
+    gap: calc(var(--spacing-unit) / 3.3);
     margin-left: calc(var(--spacing-unit) * 0.75);
     align-self: center;
     transition: background-color 0.2s ease, color 0.2s ease;
@@ -270,14 +321,12 @@ header .header-right {
 .token-select-btn:hover {
     background-color: var(--border-color);
     color: var(--text-color);
-    border-color: transparent;
 }
 
 
 .token-select-btn img {
-    width: 20px;
-    height: 20px;
-    margin-right: 0;
+    width: 19px;
+    height: 19px;
     border-radius: 50%;
 }
 
@@ -293,16 +342,16 @@ header .header-right {
     background-color: var(--input-background);
     color: var(--input-color);
     border: var(--input-border);
-    border-radius: 0.375rem;
-    padding: var(--form-element-padding-y) calc(var(--spacing-unit) * 2.5) var(--form-element-padding-y) calc(var(--spacing-unit) * 0.8);
+    border-radius: 0.3rem;
+    padding: var(--form-element-padding-y) calc(var(--spacing-unit) * 2.3) var(--form-element-padding-y) calc(var(--spacing-unit) * 0.75);
     font-size: var(--form-element-font-size);
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23a8aab0' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%239EA3B8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
     background-repeat: no-repeat;
     background-position: right calc(var(--spacing-unit) * 0.6) center;
-    background-size: 14px 10px;
+    background-size: 13px 9px;
 }
 .form-select option {
     background-color: var(--input-background);
@@ -310,7 +359,7 @@ header .header-right {
 }
 .form-select:focus {
      border-color: var(--accent-color);
-     box-shadow: 0 0 0 0.25rem rgba(71, 121, 255, 0.25);
+     box-shadow: 0 0 0 0.2rem rgba(var(--primary-color-rgb), 0.25);
 }
 
 
@@ -320,15 +369,15 @@ header .header-right {
     width: 100%;
     display: flex;
     justify-content: center;
-    margin: calc(var(--spacing-unit) * -1.1) 0;
+    margin: calc(var(--spacing-unit) * -1.05) 0;
     z-index: 10;
 }
 
 .swap-button-container .btn-secondary {
     background-color: var(--card-background);
     border: 1px solid var(--border-color);
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
     padding: 0;
     display: flex;
     align-items: center;
@@ -337,8 +386,8 @@ header .header-right {
 }
 
 .swap-button-container .btn-secondary svg {
-    width: 14px;
-    height: 14px;
+    width: 13px;
+    height: 13px;
     color: var(--secondary-text-color);
     transition: color 0.2s ease;
 }
@@ -359,8 +408,8 @@ header .header-right {
     padding: var(--button-padding-y) var(--button-padding-x);
     border-radius: var(--button-border-radius);
     font-size: var(--button-font-size);
-    font-weight: bold;
-    transition: all 0.3s ease;
+    font-weight: 600;
+    transition: all 0.2s ease;
     border: none;
     display: block;
     width: 100%;
@@ -370,45 +419,46 @@ header .header-right {
 .btn-primary {
     background: var(--button-primary-background);
     color: var(--button-primary-color);
+    box-shadow: 0 2px 4px rgba(var(--primary-color-rgb), 0.2);
 }
 
 .btn-primary:hover {
     background: var(--accent-color-dark);
     color: var(--button-primary-color);
-    box-shadow: 0 2px 5px rgba(71, 121, 255, 0.2);
+    box-shadow: 0 3px 7px rgba(var(--primary-color-rgb), 0.3);
 }
 
 .btn-success {
     background-color: var(--success-color);
-    color: var(--background-color);
+    color: var(--success-color-text);
 }
 .btn-success:hover {
-    background-color: color-mix(in srgb, var(--success-color) 90%, black);
-    color: var(--background-color);
+    background-color: color-mix(in srgb, var(--success-color) 85%, black);
+    color: var(--success-color-text);
 }
 .btn-warning {
     background-color: var(--warning-color);
-    color: var(--background-color);
+    color: var(--warning-color-text);
 }
 .btn-warning:hover {
-    background-color: color-mix(in srgb, var(--warning-color) 90%, black);
-    color: var(--background-color);
+    background-color: color-mix(in srgb, var(--warning-color) 85%, #000000b3);
+    color: var(--warning-color-text);
 }
 .btn-danger {
     background-color: var(--danger-color);
-    color: var(--button-primary-color);
+    color: var(--danger-color-text);
 }
 .btn-danger:hover {
-    background-color: color-mix(in srgb, var(--danger-color) 90%, black);
-    color: var(--button-primary-color);
+    background-color: color-mix(in srgb, var(--danger-color) 85%, black);
+    color: var(--danger-color-text);
 }
 
 
 .btn:disabled {
-    background-color: var(--border-color) !important;
+    background-color: var(--button-secondary-background) !important;
     color: var(--secondary-text-color) !important;
     cursor: not-allowed;
-    opacity: 0.7 !important;
+    opacity: 0.6 !important;
     box-shadow: none !important;
 }
 
@@ -418,21 +468,24 @@ header .header-right {
     background-color: var(--card-background);
     color: var(--text-color);
     border: 1px solid var(--border-color);
-    border-radius: 0.375rem;
-    padding: calc(var(--spacing-unit) * 0.8);
+    border-radius: 0.3rem;
+    padding: calc(var(--spacing-unit) * 0.75);
     font-size: 0.85em;
 }
 .alert-info {
-     background-color: rgba(71, 121, 255, 0.1);
+     background-color: rgba(var(--primary-color-rgb), 0.1);
      color: var(--text-color);
-     border-color: var(--primary-color);
+     border-left: 3px solid var(--primary-color);
+     border-top: 1px solid var(--border-color);
+     border-right: 1px solid var(--border-color);
+     border-bottom: 1px solid var(--border-color);
 }
 
 #swap-status, #bridge-status, #telegram-message {
     margin-top: calc(var(--spacing-unit) * 0.75);
     font-size: 0.85em;
     color: var(--secondary-text-color);
-    min-height: 1.2em;
+    min-height: 1.15em;
     width: 100%;
     text-align: center;
 }
@@ -447,48 +500,51 @@ header .header-right {
     background-color: var(--card-background);
     color: var(--text-color);
     border: 1px solid var(--border-color);
-    border-radius: 0.375rem;
+    border-radius: 0.3rem;
 }
 
 .modal-header {
     border-bottom: 1px solid var(--border-color);
-    padding: var(--spacing-unit) calc(var(--spacing-unit) * 1.2);
+    padding: var(--spacing-unit) calc(var(--spacing-unit) * 1.15);
 }
 .modal-title {
     color: var(--text-color);
     font-size: 1.1em;
 }
 .modal-body {
-    padding: calc(var(--spacing-unit) * 1.2);
+    padding: calc(var(--spacing-unit) * 1.15);
 }
 .modal-footer {
     border-top: 1px solid var(--border-color);
-    padding: var(--spacing-unit) calc(var(--spacing-unit) * 1.2);
+    padding: var(--spacing-unit) calc(var(--spacing-unit) * 1.15);
 }
 
 .btn-close {
-    filter: invert(1) brightness(0.8);
+    filter: invert(80%) sepia(15%) saturate(500%) hue-rotate(180deg) brightness(90%) contrast(90%);
+}
+.btn-close:hover {
+    filter: invert(90%) sepia(20%) saturate(700%) hue-rotate(180deg) brightness(100%) contrast(100%);
 }
 
 #token-search {
      margin-bottom: calc(var(--spacing-unit) * 0.75);
-     background-color: var(--background-color);
+     background-color: var(--input-background);
      color: var(--text-color);
      border: 1px solid var(--border-color);
      border-radius: 0.25rem;
      padding: calc(var(--spacing-unit) * 0.5) calc(var(--spacing-unit) * 0.75);
-     font-size: 0.9em;
+     font-size: 0.875em;
 }
 #token-search:focus {
      border-color: var(--accent-color);
-     box-shadow: 0 0 0 0.2rem rgba(71, 121, 255, 0.25);
+     box-shadow: 0 0 0 0.18rem rgba(var(--primary-color-rgb), 0.25);
 }
 
 
 #token-list {
     list-style: none;
     padding: 0;
-    max-height: 280px;
+    max-height: 270px;
     overflow-y: auto;
     border: 1px solid var(--border-color);
     border-radius: 0.25rem;
@@ -500,10 +556,10 @@ header .header-right {
     cursor: pointer;
     color: var(--text-color);
     background-color: transparent;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.15s ease;
     display: flex;
     align-items: center;
-    font-size: 0.9em;
+    font-size: 0.875em;
 }
 
 #token-list li:last-child {
@@ -515,8 +571,8 @@ header .header-right {
 }
 
 #token-list li img {
-    width: 20px;
-    height: 20px;
+    width: 19px;
+    height: 19px;
     margin-right: calc(var(--spacing-unit) * 0.75);
     border-radius: 50%;
 }
@@ -527,29 +583,23 @@ header .header-right {
      font-size: 0.75em;
      color: var(--secondary-text-color) !important;
 }
-#transaction-modal-explorer-link {
-     margin-top: calc(var(--spacing-unit) * 0.75);
-     padding: var(--button-padding-y) var(--button-padding-x);
-     font-size: var(--button-font-size);
-}
+/* #transaction-modal-explorer-link - uses .btn */
 
 
 /* Telegram specific styles */
-#telegram-section {
-    /* Uses .form-section */
-}
+/* #telegram-section - uses .form-section */
 
 #telegram-linking-info {
-    background-color: rgba(71, 121, 255, 0.05);
+    background-color: rgba(var(--primary-color-rgb), 0.07);
     border: 1px dashed var(--primary-color);
     padding: var(--spacing-unit);
-    border-radius: 0.375rem;
+    border-radius: 0.3rem;
     margin-top: var(--spacing-unit);
 }
 #telegram-linking-info p {
-    margin-bottom: calc(var(--spacing-unit) / 3);
+    margin-bottom: calc(var(--spacing-unit) / 3.3);
     color: var(--text-color);
-    font-size: 0.9em;
+    font-size: 0.875em;
 }
 #telegram-linking-info .alert-link {
      color: var(--accent-color);
@@ -561,7 +611,7 @@ header .header-right {
 }
 
 #telegram-linking-code {
-    font-size: 1.3em;
+    font-size: 1.25em;
     color: var(--accent-color);
     font-weight: bold;
     display: block;
@@ -570,5 +620,5 @@ header .header-right {
 }
 #telegram-linking-info small {
      color: var(--secondary-text-color);
-     font-size: 0.9em;
+     font-size: 0.875em; /* Относительно родителя */
 }
